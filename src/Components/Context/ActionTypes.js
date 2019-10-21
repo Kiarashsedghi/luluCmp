@@ -1,0 +1,4 @@
+export const TOGGLE_MODAL = 'TOGGLE_MODAL';
+export const ADD_PROJECT = 'ADD_PROJECT'
+export const REMOVE_PROJECT = 'REMOVE_PROJECT'
+export const ON_CHANGE_TEXTAREA = 'ON_CHANGE_TEXTARE'
