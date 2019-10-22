@@ -10,24 +10,38 @@ grammar Loop;
 
 // WS : [ \t\r\n] -> skip ;
 
-program: Identifiers | const_val;
+program: (
+		Identifiers
+	);
 
+const_val: Bool_const;
+Bool_const: 'true' | 'false';
+//Int_const : INTEGER_NUM | HEX_NUM ;
 
-
-
-const_val :  Bool_const;
-Bool_const : 'true' | 'false' ;
-// Int_const : ('0x'|'0X')[a-fA-F0-9]+;
 /*
-*TODO:
-Int_const & Real_const & String_const
+ * TODO: Int_const & Real_const & String_const
  */
 
-
-
-
-
-
+type:
+	'int'
+	| 'float'
+	| 'string'
+	| Identifiers
+	| 'bool';
+	// We can declare a new token as Known_types for ('int' , 'float' ,' bool') for presenting parse tree  
 
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
+Unary_op: '!' | '-' | '~';
+binary_op:
+	Comparative_op
+	| Arithmatic_op
+	| Logical_op
+	| Bitwise_op;
+
+Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<';
+Logical_op: '||' | '&&';
+Bitwise_op: '&' | '|';
+Arithmatic_op: '+' | '*' | '/' | '%';
+
+WS: ['\t' | '\n' | '\r']+ -> skip;
 
