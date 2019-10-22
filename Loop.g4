@@ -11,7 +11,7 @@ grammar Loop;
 // WS : [ \t\r\n] -> skip ;
 
 program: (
-		Identifiers
+		assign
 	);
 
 const_val: Bool_const;
@@ -30,6 +30,21 @@ type:
 	| 'bool';
 	// We can declare a new token as Known_types for ('int' , 'float' ,' bool') for presenting parse tree  
 
+assign : ( var | '(' var  ( ',' var)* ')' ) '=' expr ;
+
+var : ( ( 'this' | 'super' ) '.' )?  ref ( '.' ref )* ;
+
+ref : Identifiers ('[' expr  ']')*;
+
+
+
+
+expr : expr binary_op expr | '(' expr ')' | Unary_op  expr |  array  | const_val  | var;
+
+array  : '[' ( expr | array ) ( ',' ( expr | array ) )*']';
+
+
+
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
 Unary_op: '!' | '-' | '~';
 binary_op:
@@ -43,5 +58,5 @@ Logical_op: '||' | '&&';
 Bitwise_op: '&' | '|';
 Arithmatic_op: '+' | '*' | '/' | '%';
 
-WS: ['\t' | '\n' | '\r']+ -> skip;
+//WS: ['\t' | '\n' | '\r']+ -> skip;
 
