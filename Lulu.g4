@@ -1,16 +1,5 @@
 grammar Lulu;
-
-// program : LOOP_KEY OBRACE condition  CBRACE OCBRACE CCBRACE ;
-
-// LOOP_KEY : 'while' ;
-
-// OBRACE : '(' ; CBRACE : ')' ; OCBRACE : '{' ; CCBRACE : '}' ; condition : operand OPERATOR
-// operand | INT | ID ; operand : INT | ID ; INT : [1-9][0-9]* ; ID : [a-zA-Z][a-zA-Z0-9]*; OPERATOR
-// : '==' | '>=' | '<=' | '!=' ;
-
-// WS : [ \t\r\n] -> skip ;
-
-program: ( func_def );
+program: ( func_call );
 
 const_val: Bool_const;
 Bool_const: 'true' | 'false';
@@ -37,8 +26,8 @@ stmt:
 var_def: 'const'? type var_val (',' var_val)* ';';
 var_val: ref ('=' expr)?;
 
-func_call : (var '.')? func_call_args | 'read' '('')'| 'write' '('expr')'; //func_call_args = handle_call
-func_call_args : Identifiers '(' params? ')';
+func_call : (var '.')? func_handler | 'read' '('')'| 'write' '('expr')'; //func_handler = handle_call
+func_handler : Identifiers '(' params? ')';
 params : expr | expr ',' params; // expr can be function_call in params of a function_call !!!!!!!!!!!
 
 
@@ -79,7 +68,7 @@ expr: (Unary_op | '-') (
 	|expr binary_op expr
 	| array
 	| const_val
-	|'allocate' func_call_args /* FIXME: allocate not understood  */
+	|'allocate' func_handler /* FIXME: allocate not understood  */
 	|func_call
 	| var
 	|'nil' /*FIXME: nill not understood */;
