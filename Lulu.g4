@@ -1,5 +1,5 @@
 grammar Lulu;
-program: ( func_call );
+program: ( );
 
 const_val: Bool_const;
 Bool_const: 'true' | 'false';
@@ -102,6 +102,8 @@ Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<';
 // Arithmatic_op: '+' | '/' | '*' | '-' | '%';
 Logical_op: '||' | '&&';
 Bitwise_op: '&' | '|';
+
+Comment:( '#$' ~( '\r' | '\n')* |'#''(' .* ')''#' )->skip ;
 
 WS: ['\t' | '\n' | '\r']+ -> skip;
 
