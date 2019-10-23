@@ -10,7 +10,7 @@ grammar Lulu;
 
 // WS : [ \t\r\n] -> skip ;
 
-program: ( loop_stmt);
+program: ( func_def );
 
 const_val: Bool_const;
 Bool_const: 'true' | 'false';
@@ -21,15 +21,35 @@ Bool_const: 'true' | 'false';
  */
 
 // To have nested blocks just add 'block' in below statement 
+
+
+
 block: '{' (var_def | stmt)* '}';
 stmt:
 	assign ';'
+	|cond_stmt 
+	|loop_stmt 
+	|func_call';'
 	| 'break' ';'
 	| 'continue' ';'
 	| 'destruct' ('[' ']')* Identifiers ';';
 
 var_def: 'const'? type var_val (',' var_val)* ';';
 var_val: ref ('=' expr)?;
+
+func_call : (var '.')? func_call_args | 'read' '('')'| 'write' '('expr')'; //func_call_args = handle_call
+func_call_args : Identifiers '(' params? ')';
+params : expr | expr ',' params; // expr can be function_call in params of a function_call !!!!!!!!!!!
+
+
+
+func_def_args : type ('['']')* Identifiers | func_def_args ',' type ('['']') *Identifiers;
+
+func_def : ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args? ')' block; //func_def_args === args_var
+
+cond_stmt : 'if' expr (block|stmt)('else' (block|stmt)) ?; //| 'switch'var '{'switch_body'}';
+// switch_body: ('caseof' Int_const ':' block)+ ('default'':'block) ?;
+
 
 loop_stmt:
 	'for' (type? assign)? ';' expr ';' assign? block
@@ -59,7 +79,11 @@ expr: (Unary_op | '-') (
 	|expr binary_op expr
 	| array
 	| const_val
-	| var;
+	|'allocate' func_call_args /* FIXME: allocate not understood  */
+	|func_call
+	| var
+	|'nil' /*FIXME: nill not understood */;
+
 
 array: '[' ( expr | array) ( ',' ( expr | array))* ']';
 
