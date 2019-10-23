@@ -26,13 +26,27 @@ stmt:
 var_def: 'const'? type var_val (',' var_val)* ';';
 var_val: ref ('=' expr)?;
 
+
+// fst_dcl= <ft_dcl>
+fst_dcl : 'declare' '{' ( func_dcl | type_dcl | var_def )+ '}' ;
+
+// Function dcl accepts only 1 format for parameters ( dcl_args | func_def_args )
+func_dcl : ( '(' dcl_args ')' '=' )? Identifiers '(' ( dcl_args | func_def_args )? ')'';';
+
+// dcl_args = <args>
+dcl_args  :   type ('['']')*  |  dcl_args ',' type ('['']')*;
+
+type_dcl : Identifiers ';';
+
+
+
 func_call : (var '.')? func_handler | 'read' '('')'| 'write' '('expr')'; //func_handler = handle_call
 func_handler : Identifiers '(' params? ')';
 params : expr | expr ',' params; // expr can be function_call in params of a function_call !!!!!!!!!!!
 
 
 
-func_def_args : type ('['']')* Identifiers | func_def_args ',' type ('['']') *Identifiers;
+func_def_args : type ('['']')* Identifiers | func_def_args ',' type ('['']')* Identifiers;
 
 func_def : ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args? ')' block; //func_def_args === args_var
 
