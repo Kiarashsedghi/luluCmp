@@ -1,5 +1,5 @@
 grammar Lulu;
-program: ( );
+program: (fst_dcl? fst_def+);
 
 const_val: Bool_const;
 Bool_const: 'true' | 'false';
@@ -11,14 +11,12 @@ Bool_const: 'true' | 'false';
 
 // To have nested blocks just add 'block' in below statement 
 
-
-
 block: '{' (var_def | stmt)* '}';
 stmt:
 	assign ';'
-	|cond_stmt 
-	|loop_stmt 
-	|func_call';'
+	| cond_stmt
+	| loop_stmt
+	| func_call ';'
 	| 'break' ';'
 	| 'continue' ';'
 	| 'destruct' ('[' ']')* Identifiers ';';
@@ -26,33 +24,45 @@ stmt:
 var_def: 'const'? type var_val (',' var_val)* ';';
 var_val: ref ('=' expr)?;
 
-
 // fst_dcl= <ft_dcl>
-fst_dcl : 'declare' '{' ( func_dcl | type_dcl | var_def )+ '}' ;
+fst_dcl: 'declare' '{' ( func_dcl | type_dcl | var_def)+ '}';
 
 // Function dcl accepts only 1 format for parameters ( dcl_args | func_def_args )
-func_dcl : ( '(' dcl_args ')' '=' )? Identifiers '(' ( dcl_args | func_def_args )? ')'';';
+func_dcl: ('(' dcl_args ')' '=')? Identifiers '(' (
+		dcl_args
+		| func_def_args
+	)? ')' ';';
 
 // dcl_args = <args>
-dcl_args  :   type ('['']')*  |  dcl_args ',' type ('['']')*;
+dcl_args: type ('[' ']')* | dcl_args ',' type ('[' ']')*;
 
-type_dcl : Identifiers ';';
+type_dcl: Identifiers ';';
 
+//fst_def = <ft_def>
+fst_def: type_def | func_def;
+type_def:
+	'type' Identifiers (':' Identifiers)? '{' component+ '}';
+component: access_modifier? (var_def | func_def);
+access_modifier: 'private' | 'public' | 'protected';
 
+func_call: (var '.')? func_handler
+	| 'read' '(' ')'
+	| 'write' '(' expr ')'; //func_handler = handle_call
+func_handler: Identifiers '(' params? ')';
+params:
+	expr
+	| expr ',' params; // expr can be function_call in params of a function_call !!!!!!!!!!!
 
-func_call : (var '.')? func_handler | 'read' '('')'| 'write' '('expr')'; //func_handler = handle_call
-func_handler : Identifiers '(' params? ')';
-params : expr | expr ',' params; // expr can be function_call in params of a function_call !!!!!!!!!!!
+func_def_args:
+	type ('[' ']')* Identifiers
+	| func_def_args ',' type ('[' ']')* Identifiers;
 
+func_def: ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args? ')' block;
+	//func_def_args === args_var
 
-
-func_def_args : type ('['']')* Identifiers | func_def_args ',' type ('['']')* Identifiers;
-
-func_def : ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args? ')' block; //func_def_args === args_var
-
-cond_stmt : 'if' expr (block|stmt)('else' (block|stmt)) ?; //| 'switch'var '{'switch_body'}';
+cond_stmt:
+	'if' expr (block | stmt) ('else' (block | stmt))?; //| 'switch'var '{'switch_body'}';
 // switch_body: ('caseof' Int_const ':' block)+ ('default'':'block) ?;
-
 
 loop_stmt:
 	'for' (type? assign)? ';' expr ';' assign? block
@@ -73,20 +83,17 @@ expr: (Unary_op | '-') (
 	) // we've separated the '-' token from Unary_op 
 	| expr ('*' | '/' | '%') expr
 	/*
-	*FIXME:
-	*-adding bitwise operators with * / %
-	*-fix binary operators
+	 * FIXME: -adding bitwise operators with * / % -fix binary operators
 	 */
 	| expr ('+' | '-') expr
 	| '(' expr ')'
-	|expr binary_op expr
+	| expr binary_op expr
 	| array
 	| const_val
-	|'allocate' func_handler /* FIXME: allocate not understood  */
-	|func_call
+	| 'allocate' func_handler /* FIXME: allocate not understood  */
+	| func_call
 	| var
-	|'nil' /*FIXME: nill not understood */;
-
+	| 'nil' /*FIXME: nill not understood */;
 
 array: '[' ( expr | array) ( ',' ( expr | array))* ']';
 
@@ -103,7 +110,7 @@ Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<';
 Logical_op: '||' | '&&';
 Bitwise_op: '&' | '|';
 
-Comment:( '#$' ~( '\r' | '\n')* |'#''(' .* ')''#' )->skip ;
+Comment: ( '#$' ~( '\r' | '\n')* | '#' '(' .* ')' '#') -> skip;
 
 WS: ['\t' | '\n' | '\r']+ -> skip;
 
