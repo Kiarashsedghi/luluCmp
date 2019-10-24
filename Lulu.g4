@@ -1,9 +1,10 @@
 grammar Lulu;
 program: (fst_dcl? fst_def+);
+// program: cond_stmt;
 
 const_val: Bool_const;
 Bool_const: 'true' | 'false';
-//Int_const : INTEGER_NUM | HEX_NUM ;
+// int_const : DEC_NUM| HEX_NUM ;
 
 /*
  * TODO: Int_const & Real_const & String_const
@@ -58,7 +59,7 @@ func_def_args:
 	| func_def_args ',' type ('[' ']')* Identifiers;
 
 func_def: ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args? ')' block;
-	//func_def_args === args_var
+//func_def_args === args_var
 
 cond_stmt:
 	'if' expr (block | stmt) ('else' (block | stmt))?; //| 'switch'var '{'switch_body'}';
@@ -77,17 +78,17 @@ var: ( ( 'this' | 'super') '.')? ref ( '.' ref)*;
 
 ref: Identifiers ('[' expr ']')*;
 
-expr: (Unary_op | '-') (
-		var
-		| expr
-	) // we've separated the '-' token from Unary_op 
+expr: (Unary_op | '-') expr
+	// we've separated the '-' token from Unary_op 
 	| expr ('*' | '/' | '%') expr
 	/*
 	 * FIXME: -adding bitwise operators with * / % -fix binary operators
 	 */
 	| expr ('+' | '-') expr
+	| expr ( '==' | '>=' | '<=' | '!=' | '>' | '<') expr
+	| expr ( '&&'|'||' ) expr
 	| '(' expr ')'
-	| expr binary_op expr
+	| expr ('&' | '|') expr
 	| array
 	| const_val
 	| 'allocate' func_handler /* FIXME: allocate not understood  */
@@ -99,16 +100,10 @@ array: '[' ( expr | array) ( ',' ( expr | array))* ']';
 
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
 Unary_op: '!' | '~';
-binary_op:
-	Comparative_op
-	// | Arithmatic_op
-	| Logical_op
-	| Bitwise_op;
+// binary_op: Comparative_op | Logical_op | Arithmatic_op | Bitwise_op;
 
-Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<';
-// Arithmatic_op: '+' | '/' | '*' | '-' | '%';
-Logical_op: '||' | '&&';
-Bitwise_op: '&' | '|';
+// Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<'; Arithmatic_op: '+' | '/' | '*' | '-' |
+// '%'; Logical_op: Bitwise_op: '&' | '|';
 
 Comment: ( '#$' ~( '\r' | '\n')* | '#' '(' .* ')' '#') -> skip;
 
