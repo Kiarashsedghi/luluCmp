@@ -13,16 +13,15 @@ Real_const:
 
 EXPONENT: ('^') ('+' | '-')? [0-9]+;
 
-String_const : '\'' ([\t\n\r\0\'\\] |~('\\')*)*  '\'';
-// String_const : '\''   ('\\n' | '\\t' |'\\r' |'\\\\' |'\\0'|'\\'TOK|~('\\') )* '\'';
- //TOK: '\\x';
-// int_const : HEX_NUM |DEC_NUM; HEX_NUM : '0x' ([a-fA-F0-9])+; DEC_NUM : ([0-9])+;
+String_const : '\''   ('\\n' | '\\t' |'\\r' |'\\\\' |'\\0'|Num_Esc_Char|~('\\'|'\'') )* '\'';
+//String_const : '\'' .*?  '\'';
 
-/*
- * TODO: Int_const & Real_const & String_const
- */
-//
-// To have nested blocks just add 'block' in below statement
+// Numeric Escape Characters
+Num_Esc_Char : '\\'('x'|'X')[0-9a-fA-F][0-9a-fA-f] ;
+
+
+
+//  To have nested blocks just add 'block' in below statement
 block: '{' (var_def | stmt)* '}';
 stmt:
 	assign ';'
@@ -124,12 +123,13 @@ Logical_OR: ('||');
 array: '[' ( expr | array) ( ',' ( expr | array))* ']';
 
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
-// binary_op: Comparative_op | Logical_op | Arithmatic_op | Bitwise_op;
 
-// Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<'; Arithmatic_op: '+' | '/' | '*' | '-' |
-// '%'; Logical_op: Bitwise_op: '&' | '|';
 
-Comment: ( '#$' ~( '\r' | '\n')* | '#' '(' .* ')' '#') -> skip;
+// FIXME Nested Multiline_Comment
+
+Multi_line_Comment : '#(' .*? ')#' -> skip;
+
+Single_Line_Comment: '#$' ~[\r\n]* -> skip;
 
 WS: [ \t\n\r]+ -> skip;
 
