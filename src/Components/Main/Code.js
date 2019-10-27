@@ -2,23 +2,32 @@ import React, { useState } from "react";
 import antlr4 from "antlr4";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Nav, Form, Button } from "react-bootstrap";
-import LoopLexer from "../../lib/LoopLexer";
-import LoopParser from "../../lib/LoopParser";
-import { useProjectsValue } from "../Context";
-import { Route, NavLink } from "react-router-dom";
+import LuluLexer from "../../lib/LuluLexer";
+import LuluParser from "../../lib/LuluParser";
+import { useProjectsValue, useThemeValue } from "../Context";
+import { Route, NavLink ,withRouter} from "react-router-dom";
+import { onChangeTextArea, removeProject } from "../Context/Action";
+import styled from "styled-components";
 
-const Code = ({ handleChangeOutput, handleLoading }) => {
+const Times = styled.i.attrs(props => ({className: "fas fa-times"}))`
+  color : #b7b7b7;
+  &:hover {
+    color : red ;
+  }
+`;
+
+const Code = ({ handleChangeOutput, handleLoading ,...props}) => {
   const [projects, projectsDispatch] = useProjectsValue();
-  const [input, setInput] = useState("");
+  const [themeValue,] = useThemeValue()
 
-  const runCompile = () => {
+  const runCompile = value => {
     handleLoading(true);
-    const chars = new antlr4.InputStream(input);
-    const lexer = new LoopLexer.LoopLexer(chars);
+    const chars = new antlr4.InputStream(value);
+    const lexer = new LuluLexer.LuluLexer(chars);
 
     const tokens = new antlr4.CommonTokenStream(lexer);
 
-    const parser = new LoopParser.LoopParser(tokens);
+    const parser = new LuluParser.LuluParser(tokens);
     parser.buildParseTrees = true;
     const tree = parser.program();
 
@@ -28,46 +37,56 @@ const Code = ({ handleChangeOutput, handleLoading }) => {
       handleLoading(false);
     }, 1000);
   };
-  const handleChangeInput = (e,id) => {
-    setInput(e.target.value);
-    console.log(e , id)
+  const handleChangeInput = (id, e) => {
+    console.log(e);
+    projectsDispatch(onChangeTextArea(e.target.value, id));
   };
+  const handleRemoveProject = (id ,e) =>{
+    e.preventDefault()
+    e.stopPropagation();
+    projectsDispatch(removeProject(id))
+    props.history.push('/');
+  }
 
-  console.log("projects in navbar", projects);
   return (
     <div>
       <Nav variant="tabs" defaultActiveKey="/" className="mb-2">
         {projects.map(p => (
           <Nav.Item>
-            <NavLink to={`/${p.name}`}>
-              <Nav.Link>{p.name}</Nav.Link>
-            </NavLink>
+            <Nav.Link as={NavLink} to={`/${p.name}`}>
+              {p.name} <Times className='ml-2' onClick={(e)=>handleRemoveProject(p.id,e)}/>
+            </Nav.Link>
           </Nav.Item>
         ))}
       </Nav>
       {projects.map(p => (
         <Route
           path={`/${p.name}`}
-          render={
+          render={() => (
             <React.Fragment>
               <Form.Group controlId="exampleForm.ControlTextarea1">
                 <Form.Control
                   as="textarea"
                   rows="15"
                   value={p.value}
-                  onChange={()=>handleChangeInput(p.id)}
+                  onChange={e => handleChangeInput(p.id, e)}
                 />
               </Form.Group>
+              <Button
+                variant={themeValue}
+                text={themeValue ==='light' ?'black' :'white'}
+                size="lg"
+                block
+                onClick={() => runCompile(p.value)}
+              >
+                Compile
+              </Button>
             </React.Fragment>
-          }
+          )}
         />
       ))}
-
-      <Button variant="light" size="lg" block onClick={runCompile}>
-        Compile
-      </Button>
     </div>
   );
 };
 
-export default Code;
+export default withRouter(Code);
