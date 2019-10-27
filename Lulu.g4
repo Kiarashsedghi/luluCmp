@@ -1,27 +1,7 @@
 grammar Lulu;
-// program: (fst_dcl? fst_def+);
-program: assign;
+program: fst_dcl? fst_def+;
 
-const_val: Int_const | Real_const | Bool_const |String_const;
-Bool_const: 'true' | 'false';
-Int_const: [0-9]+ | ('0x' | '0X') [a-fA-F0-9]+;
-
-Real_const:
-	[0-9]+ '.' [0-9]* EXPONENT?
-	| [0-9]* '.' [0-9]+ EXPONENT?
-	| [0-9]+ EXPONENT;
-
-EXPONENT: ('^') ('+' | '-')? [0-9]+;
-
-String_const : '\''   ('\\n' | '\\t' |'\\r' |'\\\\' |'\\0'|Num_Esc_Char|~('\\'|'\'') )* '\'';
-//String_const : '\'' .*?  '\'';
-
-// Numeric Escape Characters
-Num_Esc_Char : '\\'('x'|'X')[0-9a-fA-F][0-9a-fA-f] ;
-
-
-
-//  To have nested blocks just add 'block' in below statement
+const_val: Int_const | Real_const | Bool_const | String_const;
 block: '{' (var_def | stmt)* '}';
 stmt:
 	assign ';'
@@ -58,18 +38,19 @@ access_modifier: 'private' | 'public' | 'protected';
 
 func_call: (variable '.')? func_handler
 	| 'read' '(' ')'
-	| 'write' '(' expr ')'; //func_handler = handle_call
+	| 'write' '(' expr ')';
+//func_handler = handle_call
 func_handler: Identifiers '(' params? ')';
 params:
 	expr
 	| expr ',' params; // expr can be function_call in params of a function_call !!!!!!!!!!!
 
+//func_def_args === args_var
 func_def_args:
 	type ('[' ']')* Identifiers
 	| func_def_args ',' type ('[' ']')* Identifiers;
 
 func_def: ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args? ')' block;
-//func_def_args === args_var
 
 cond_stmt:
 	'if' expr (block | stmt) ('else' (block | stmt))?
@@ -105,10 +86,12 @@ expr:
 	| '(' expr ')'
 	| array
 	| const_val
-	| 'allocate' func_handler /* FIXME: allocate not understood  */
+	| 'allocate' func_handler
 	| func_call
 	| variable
-	| 'nil' /*FIXME: nill not understood */;
+	| 'nil';
+
+array: '[' ( expr | array) ( ',' ( expr | array))* ']';
 
 Multiplicative: ('*' | '/' | '%');
 Unary: ( '!' | '~' | '-');
@@ -119,15 +102,30 @@ Bitwise_AND: ('&');
 Bitwise_inclusive_OR: ('|');
 Logical_AND: ('&&');
 Logical_OR: ('||');
+Bool_const: 'true' | 'false';
+Int_const: [0-9]+ | ('0x' | '0X') [a-fA-F0-9]+;
 
-array: '[' ( expr | array) ( ',' ( expr | array))* ']';
+Real_const:
+	[0-9]+ '.' [0-9]* Exponent?
+	| [0-9]* '.' [0-9]+ Exponent?
+	| [0-9]+ Exponent;
+
+Exponent: ('^') ('+' | '-')? [0-9]+;
+
+String_const:
+	'\'' (
+		'\\n'
+		| '\\t'
+		| '\\r'
+		| '\\\\'
+		| '\\0'
+		| '\\' ('x' | 'X') [0-9a-fA-F][a-f0-9A-F]
+		| ~('\\' | '\'')
+	)* '\'';
 
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
 
-
-// FIXME Nested Multiline_Comment
-
-Multi_line_Comment : '#(' .*? ')#' -> skip;
+Multi_line_Comment: '#(' .*? ')#' -> skip;
 
 Single_Line_Comment: '#$' ~[\r\n]* -> skip;
 
