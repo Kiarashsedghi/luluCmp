@@ -1,17 +1,28 @@
 grammar Lulu;
-program: (fst_dcl? fst_def+);
-// program: cond_stmt;
+// program: (fst_dcl? fst_def+);
+program: assign;
 
-const_val: Bool_const;
+const_val: Int_const | Real_const | Bool_const |String_const;
 Bool_const: 'true' | 'false';
-// int_const : DEC_NUM| HEX_NUM ;
+Int_const: [0-9]+ | ('0x' | '0X') [a-fA-F0-9]+;
+
+Real_const:
+	[0-9]+ '.' [0-9]* EXPONENT?
+	| [0-9]* '.' [0-9]+ EXPONENT?
+	| [0-9]+ EXPONENT;
+
+EXPONENT: ('^') ('+' | '-')? [0-9]+;
+
+String_const : '\'' ([\t\n\r\0\'\\] |~('\\')*)*  '\'';
+// String_const : '\''   ('\\n' | '\\t' |'\\r' |'\\\\' |'\\0'|'\\'TOK|~('\\') )* '\'';
+ //TOK: '\\x';
+// int_const : HEX_NUM |DEC_NUM; HEX_NUM : '0x' ([a-fA-F0-9])+; DEC_NUM : ([0-9])+;
 
 /*
  * TODO: Int_const & Real_const & String_const
  */
-
-// To have nested blocks just add 'block' in below statement 
-
+//
+// To have nested blocks just add 'block' in below statement
 block: '{' (var_def | stmt)* '}';
 stmt:
 	assign ';'
@@ -46,7 +57,7 @@ type_def:
 component: access_modifier? (var_def | func_def);
 access_modifier: 'private' | 'public' | 'protected';
 
-func_call: (var '.')? func_handler
+func_call: (variable '.')? func_handler
 	| 'read' '(' ')'
 	| 'write' '(' expr ')'; //func_handler = handle_call
 func_handler: Identifiers '(' params? ')';
@@ -62,8 +73,11 @@ func_def: ('(' func_def_args ')' '=')? 'function' Identifiers '(' func_def_args?
 //func_def_args === args_var
 
 cond_stmt:
-	'if' expr (block | stmt) ('else' (block | stmt))?; //| 'switch'var '{'switch_body'}';
-// switch_body: ('caseof' Int_const ':' block)+ ('default'':'block) ?;
+	'if' expr (block | stmt) ('else' (block | stmt))?
+	| 'switch' variable '{' switch_body '}';
+switch_body: ('caseof' Int_const ':' block)+ (
+		'default' ':' block
+	)?;
 
 loop_stmt:
 	'for' (type? assign)? ';' expr ';' assign? block
@@ -72,34 +86,44 @@ loop_stmt:
 type: 'int' | 'float' | 'string' | Identifiers | 'bool';
 // We can declare a new token as Known_types for ('int' , 'float' ,' bool') for presenting parse tree  
 
-assign: ( var | '(' var ( ',' var)* ')') '=' expr;
+assign: ( variable | '(' variable ( ',' variable)* ')') '=' expr;
 
-var: ( ( 'this' | 'super') '.')? ref ( '.' ref)*;
+variable: ( ( 'this' | 'super') '.')? ref ( '.' ref)*;
 
 ref: Identifiers ('[' expr ']')*;
 
-expr: (Unary_op | '-') expr
+expr:
+	('!' | '~' | '-') expr
 	// we've separated the '-' token from Unary_op 
-	| expr ('*' | '/' | '%') expr
-	/*
-	 * FIXME: -adding bitwise operators with * / % -fix binary operators
-	 */
+	| expr Multiplicative expr
 	| expr ('+' | '-') expr
-	| expr ( '==' | '>=' | '<=' | '!=' | '>' | '<') expr
-	| expr ( '&&'|'||' ) expr
+	| expr Relational expr
+	| expr Equality expr
+	| expr Bitwise_AND expr
+	| expr Bitwise_inclusive_OR expr
+	| expr Logical_AND expr
+	| expr Logical_OR expr
 	| '(' expr ')'
-	| expr ('&' | '|') expr
 	| array
 	| const_val
 	| 'allocate' func_handler /* FIXME: allocate not understood  */
 	| func_call
-	| var
+	| variable
 	| 'nil' /*FIXME: nill not understood */;
+
+Multiplicative: ('*' | '/' | '%');
+Unary: ( '!' | '~' | '-');
+Additive: ('+' | '-');
+Relational: ( '>=' | '<=' | '>' | '<');
+Equality: ( '==' | '!=');
+Bitwise_AND: ('&');
+Bitwise_inclusive_OR: ('|');
+Logical_AND: ('&&');
+Logical_OR: ('||');
 
 array: '[' ( expr | array) ( ',' ( expr | array))* ']';
 
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
-Unary_op: '!' | '~';
 // binary_op: Comparative_op | Logical_op | Arithmatic_op | Bitwise_op;
 
 // Comparative_op: '==' | '>=' | '<=' | '!=' | '>' | '<'; Arithmatic_op: '+' | '/' | '*' | '-' |
@@ -107,5 +131,5 @@ Unary_op: '!' | '~';
 
 Comment: ( '#$' ~( '\r' | '\n')* | '#' '(' .* ')' '#') -> skip;
 
-WS: ['\t' | '\n' | '\r']+ -> skip;
+WS: [ \t\n\r]+ -> skip;
 
