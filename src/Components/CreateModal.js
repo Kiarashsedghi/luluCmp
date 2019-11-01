@@ -47,7 +47,7 @@ const ModalInput = styled.input`
   height: 50px;
   border: none;
   color: white;
-  padding: 20px 100px;
+  padding: 40px 100px;
   background: rgb(33, 33, 33, 0.7);
   font-size: 2rem;
   :focus {
@@ -56,7 +56,8 @@ const ModalInput = styled.input`
   ::placeholder {
     color: #535353;
     font-size: 2rem;
-    letter-spacing: 1.5px;
+    font-weight:700;
+    letter-spacing: 1.1px;     
   }
 `;
 
@@ -70,7 +71,9 @@ const CreateModal = () => {
   };
   const handleAddProject = () => {
     projectsDispatch(addProject({name : input , value :'' ,id:uuid.v4()}))
-    modalDispatch(toggleModal('create'))
+    modalDispatch(toggleModal('create'));
+    setInput('')
+
   };
   const handleChangeInput = e => {
     setInput(e.target.value);

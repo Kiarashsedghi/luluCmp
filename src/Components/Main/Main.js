@@ -19,7 +19,6 @@ const [isLoading, setIsLoading] = useState(false);
   };
   return (
     <div>
-      <CreateModal />
 
       <Container>
         <Row>
