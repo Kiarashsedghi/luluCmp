@@ -1,0 +1,76 @@
+Project : Design LULU Compiler
+
+Phase Num : 1
+
+Date :  1/11/2019
+
+Programmers : Seyed Ali Sajadi (963613045)  ,  Kiarash Sedghi (963613061)
+
+-----------------------------------------------------------------------
+
+Desciption : 
+
+First phase of this project started on 21/10/2019 by two students of University of Isfahan, main focusing on writing basic grammars for LULU programing language . 
+
+Developers Who like to join us developing this language please check the last updated grammars for this language on https://github.com/Kiarashsedghi/luluCmp.git
+
+----------------------------------------------------------------------- 
+
+
+
+Grammars Wrote By Seyed Ali Sajadi : 
+
+   * type
+
+   * Identifiers
+
+   * Const Values (Boolean)
+
+   * Loop Grammar Including (for , while )
+
+   * Variable Grammars Including (var_val , var_def)
+
+   * Grammar Disambugation Including (Setting Operators Order)
+
+   * Function Including  (func_call , func_handler , func_call_args ...)
+
+   
+
+Grammars Wrote By Kiarash Sedghi : 
+
+   * Assignment  
+
+   * Variable Grammars Including (var , ref)
+   
+   * Array
+
+   * Grammar Disambugation (Changing 'expr' grammar structure)
+
+   * Program Declaration Including (fst_dcl , func_dcl , dcl_args ... )
+  
+   * Const Values (int_const , real_const , string_const ) 
+   
+   * Comments
+
+
+
+
+
+
+----------------------------------------------------------------------- 
+We (Seyed Ali Sajadi & Kiarash Sedghi) promise that the delivered project is the result of our teamwork and that no part of it has been copied from the work of others.
+If it turns out the project was not the work of this group, we will be treated according to the training criteria and will not be entitled to protest.
+
+
+
+
+
+
+
+
+
+
+
+			
+ 
+
