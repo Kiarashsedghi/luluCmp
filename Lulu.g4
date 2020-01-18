@@ -1,4 +1,4 @@
-grammar LULU;
+grammar Lulu;
 
 program: fst_dcl? fst_def+;
 
@@ -13,7 +13,7 @@ stmt:
 	| Continue ';'
 	| Destruct ('[' ']')* Identifiers ';';
 
-var_def: Const? type var_val (',' var_val)* ';';
+var_def: Const? data_type var_val (',' var_val)* ';';
 var_val: ref ('=' expr)?;
 
 // fst_dcl= <ft_dcl>
@@ -26,7 +26,7 @@ func_dcl: ('(' dcl_args ')' '=')? Identifiers '(' (
 	)? ')' ';';
 
 // dcl_args = <args>
-dcl_args: type ('[' ']')* | dcl_args ',' type ('[' ']')*;
+dcl_args: data_type ('[' ']')* | dcl_args ',' data_type ('[' ']')*;
 
 type_dcl: Identifiers ';';
 
@@ -48,8 +48,8 @@ params:
 
 //func_def_args === args_var
 func_def_args:
-	type ('[' ']')* Identifiers
-	| func_def_args ',' type ('[' ']')* Identifiers;
+	data_type ('[' ']')* Identifiers
+	| func_def_args ',' data_type ('[' ']')* Identifiers;
 
 func_def: ('(' func_def_args ')' '=')? Function Identifiers '(' func_def_args? ')' block;
 
@@ -61,10 +61,10 @@ switch_body: (Caseof Int_const ':' block)+ (
 	)?;
 
 loop_stmt:
-	For (type? assign)? ';' expr ';' assign? block
+	For (data_type? assign)? ';' expr ';' assign? block
 	| While expr block;
 
-type: Int | Float | String | Identifiers | Bool;
+data_type: Int | Float | String | Identifiers | Bool;
 // We can declare a new token as Known_types for ('int' , 'float' ,' bool') for presenting parse tree
 
 assign: ( variable | '(' variable ( ',' variable)* ')') '=' expr;
