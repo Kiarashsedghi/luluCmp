@@ -16,9 +16,10 @@ def main(argv):
     stream = CommonTokenStream(lexer)
     parser = LuluParser(stream)
     tree = parser.program()
-    printer = LuluListener()
+    compiler_listener= LuluListener()
+    compiler_listener.initial_state()
     walker = ParseTreeWalker()
-    walker.walk(printer, tree)
+    walker.walk(compiler_listener, tree)
 
 
 if __name__ == '__main__':

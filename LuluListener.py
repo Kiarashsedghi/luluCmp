@@ -26,14 +26,32 @@ class Stack:
 
 
 class Scope:
-    scope_type = str()
-    scope_symt = list()
+    __scopeType = str()
+    __scopeSt = list()
 
     def __init__(self, scope_type):
-        self.scope_type = scope_type
+        self.__scopeType = scope_type
 
-    def add_en(self, entity):
-        self.scope_symt.append(entity)
+    def add_entity(self, entity):
+        self.__scopeSt.append(entity)
+
+    def set_scope_type(self, scope_type):
+        self.__scopeType = scope_type
+
+    def get_scope_type(self):
+        return self.__scopeType
+
+    ##search entity
+
+
+class RootScope(Scope):
+    __declareSt = list()
+
+    def add_to_declare_st(self, entity):
+        self.__declareSt.append(entity)
+
+    ##seatch entity
+
 
 
 
@@ -43,24 +61,22 @@ class Entity:
     def __init__(self, entity_type):
         self.__enType = entity_type
 
-
     def get_entity_type(self):
         return self.__enType
-
 
 
 class FunctionEntity(Entity):
     __inputParams = list()
     __outputParams = list()
 
-    def checkSignature(self, inputparams, outputparams):
+    def checksignature(self, inputparams, outputparams):
         pass
 
-    def set_input_params(self, inputParams):
-        self.__inputParams = inputParams
+    def set_input_params(self, inputparams):
+        self.__inputParams = inputparams
 
-    def set_output_params(self, outputParams):
-        self.__outputParams = outputParams
+    def set_output_params(self, outputparams):
+        self.__outputParams = outputparams
 
     def get_input_params(self):
         return self.__inputParams
@@ -86,17 +102,15 @@ class VariableEntity(Entity):
         return self.__dataValue
 
 
-
-
-
-
 # This class defines a complete listener for a parse tree produced by LuluParser.
 class LuluListener(ParseTreeListener):
-    program_stack = None
 
     def __init__(self):
-        self.program_stack = Stack()
+        self.programStack = Stack()
 
+    def initial_state(self):
+        root_scope = RootScope('root')
+        self.programStack.push(root_scope)
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
         pass
