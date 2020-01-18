@@ -50,19 +50,33 @@ class RootScope(Scope):
     def add_to_declare_st(self, entity):
         self.__declareSt.append(entity)
 
+    def is_exist_entity(self,entity_name):
+        for entity in self.__declareSt:
+            if entity.get_entity_name() == entity_name:
+                return True
+
+
     ##seatch entity
-
-
 
 
 class Entity:
     __enType = str()
+    __enName = str()
 
     def __init__(self, entity_type):
         self.__enType = entity_type
 
     def get_entity_type(self):
         return self.__enType
+
+    def set_enitity_name(self,entity_name):
+        self.__enName = entity_name
+
+    def get_entity_name(self):
+        return self.__enName
+
+
+
 
 
 class FunctionEntity(Entity):
@@ -102,6 +116,10 @@ class VariableEntity(Entity):
         return self.__dataValue
 
 
+class TypeEntity(Entity):
+    pass
+
+
 # This class defines a complete listener for a parse tree produced by LuluParser.
 class LuluListener(ParseTreeListener):
 
@@ -111,6 +129,7 @@ class LuluListener(ParseTreeListener):
     def initial_state(self):
         root_scope = RootScope('root')
         self.programStack.push(root_scope)
+
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
         pass
@@ -185,7 +204,36 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#type_dcl.
     def enterType_dcl(self, ctx: LuluParser.Type_dclContext):
-        pass
+        type_name=(ctx.getChild(1)).getText()
+        root_scope=self.programStack.top()
+        if root_scope.search_dclst_by_name(type_name):
+            print("Double Declaration bokhoresh")
+            exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # Exit a parse tree produced by LuluParser#type_dcl.
     def exitType_dcl(self, ctx: LuluParser.Type_dclContext):
