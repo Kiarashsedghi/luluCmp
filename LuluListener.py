@@ -114,7 +114,8 @@ class FunctionEntity(Entity):
 
 class VariableEntity(Entity):
     __dataType = str()  ## int float double string
-    __dataValue = str()  # TODO  may use in future
+    __Value = str()  # TODO  may use in future
+    __const = False
 
     def set_data_type(self, data_type):
         self.__dataType = data_type
@@ -122,11 +123,16 @@ class VariableEntity(Entity):
     def get_data_type(self):
         return self.__dataType
 
-    def set_data_value(self, data_value):
-        self.__dataValue = data_value
+    def set_data_value(self, value):
+        self.__Value = value
 
     def get_data_value(self):
-        return self.__dataValue
+        return self.__Value
+    def set_is_const(self):
+        self.__const = True
+    def is_const(self):
+        return self.__const
+
 
 
 class TypeEntity(Entity):
@@ -177,7 +183,35 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#var_def.
     def enterVar_def(self, ctx: LuluParser.Var_defContext):
-        pass
+
+        ## this implementation is for declare :
+        if ctx.getChild(0).getText() == 'const':
+            child_index = 2
+            while child_index < ctx.getChildCount() :
+                children_text=(ctx.getChild(child_index).getText())
+                if children_text in "= ;":
+                    break
+                else:
+                    root_scope=self.programStack.top()
+                    if root_scope.is_exist_entity(children_text) :
+                        print("bokhorosh koskesh variable ")
+                        exit()
+                    else:
+                        new_variable=VariableEntity('variable')
+                        new_variable.set_is_const()
+                        new_variable.set_entity_name(children_text)
+                        root_scope.add_to_declare_st(new_variable)
+                        child_index+=2
+
+
+
+
+
+
+
+
+
+
 
     # Exit a parse tree produced by LuluParser#var_def.
     def exitVar_def(self, ctx: LuluParser.Var_defContext):
