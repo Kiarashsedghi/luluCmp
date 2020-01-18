@@ -36,6 +36,60 @@ class Scope:
         self.scope_symt.append(entity)
 
 
+
+class Entity:
+    __enType = str()
+
+    def __init__(self, entity_type):
+        self.__enType = entity_type
+
+
+    def get_entity_type(self):
+        return self.__enType
+
+
+
+class FunctionEntity(Entity):
+    __inputParams = list()
+    __outputParams = list()
+
+    def checkSignature(self, inputparams, outputparams):
+        pass
+
+    def set_input_params(self, inputParams):
+        self.__inputParams = inputParams
+
+    def set_output_params(self, outputParams):
+        self.__outputParams = outputParams
+
+    def get_input_params(self):
+        return self.__inputParams
+
+    def get_output_params(self):
+        return self.__outputParams
+
+
+class VariableEntity(Entity):
+    __dataType = str()  ## int float double string
+    __dataValue = str()  # TODO  may use in future
+
+    def set_data_type(self, data_type):
+        self.__dataType = data_type
+
+    def get_data_type(self):
+        return self.__dataType
+
+    def set_data_value(self, data_value):
+        self.__dataValue = data_value
+
+    def get_data_value(self):
+        return self.__dataValue
+
+
+
+
+
+
 # This class defines a complete listener for a parse tree produced by LuluParser.
 class LuluListener(ParseTreeListener):
     program_stack = None
