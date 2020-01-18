@@ -54,6 +54,19 @@ class RootScope(Scope):
         for entity in self.__declareSt:
             if entity.get_entity_name() == entity_name:
                 return True
+        return False
+
+    def get_declare_St(self):
+        return self.__declareSt
+
+    def show_me_st(self):
+        for entity in self.__declareSt :
+            if entity.get_entity_type()=="function":
+                print(entity.get_entity_name()+"/"+entity.get_entity_type()+"/")
+            elif entity.get_entity_type()=="variable":
+                print(entity.get_entity_name()+"/"+entity.get_entity_type()+"/"+entity.get_data_type()+"/"+entity.get_data_value())
+            else:
+                print(entity.get_entity_name()+"/"+entity.get_entity_type()+"/")
 
 
     ##seatch entity
@@ -69,7 +82,7 @@ class Entity:
     def get_entity_type(self):
         return self.__enType
 
-    def set_enitity_name(self,entity_name):
+    def set_entity_name(self,entity_name):
         self.__enName = entity_name
 
     def get_entity_name(self):
@@ -136,7 +149,7 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#program.
     def exitProgram(self, ctx: LuluParser.ProgramContext):
-        pass
+            pass
 
     # Enter a parse tree produced by LuluParser#const_val.
     def enterConst_val(self, ctx: LuluParser.Const_valContext):
@@ -204,11 +217,16 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#type_dcl.
     def enterType_dcl(self, ctx: LuluParser.Type_dclContext):
-        type_name=(ctx.getChild(1)).getText()
+        type_name=(ctx.getChild(0)).getText()
         root_scope=self.programStack.top()
-        if root_scope.search_dclst_by_name(type_name):
-            print("Double Declaration bokhoresh")
+        if root_scope.is_exist_entity(type_name):
+            root_scope.show_me_st()
+            print(ctx.start.line)
             exit()
+
+        newType=TypeEntity('type')
+        newType.set_entity_name(type_name)
+        root_scope.add_to_declare_st(newType)
 
 
 
