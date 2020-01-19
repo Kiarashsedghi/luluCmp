@@ -159,6 +159,7 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#const_val.
     def enterConst_val(self, ctx: LuluParser.Const_valContext):
+
         pass
 
     # Exit a parse tree produced by LuluParser#const_val.
@@ -185,24 +186,7 @@ class LuluListener(ParseTreeListener):
     def enterVar_def(self, ctx: LuluParser.Var_defContext):
 
         ## this implementation is for declare :
-        if ctx.getChild(0).getText() == 'const':
-            child_index = 2
-            while child_index < ctx.getChildCount() :
-                children_text=(ctx.getChild(child_index).getText())
-                if children_text in "= ;":
-                    break
-                else:
-                    root_scope=self.programStack.top()
-                    if root_scope.is_exist_entity(children_text) :
-                        print("bokhorosh koskesh variable ")
-                        exit()
-                    else:
-                        new_variable=VariableEntity('variable')
-                        new_variable.set_is_const()
-                        new_variable.set_entity_name(children_text)
-                        root_scope.add_to_declare_st(new_variable)
-                        child_index+=2
-
+        pass
 
 
 
@@ -219,10 +203,12 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#var_val.
     def enterVar_val(self, ctx: LuluParser.Var_valContext):
+        print(ctx.expr())
         pass
 
     # Exit a parse tree produced by LuluParser#var_val.
     def exitVar_val(self, ctx: LuluParser.Var_valContext):
+
         pass
 
     # Enter a parse tree produced by LuluParser#fst_dcl.
@@ -251,11 +237,10 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#type_dcl.
     def enterType_dcl(self, ctx: LuluParser.Type_dclContext):
-        type_name=(ctx.getChild(0)).getText()
+        type_name=(ctx.Identifiers()).getText()
         root_scope=self.programStack.top()
         if root_scope.is_exist_entity(type_name):
             root_scope.show_me_st()
-            print(ctx.start.line)
             exit()
 
         newType=TypeEntity('type')
@@ -421,6 +406,7 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#expr.
     def enterExpr(self, ctx: LuluParser.ExprContext):
+
         pass
 
     # Exit a parse tree produced by LuluParser#expr.
