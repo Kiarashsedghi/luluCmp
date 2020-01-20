@@ -24,63 +24,89 @@ else:
 
 
     class Stack:
-        Container = list()
+
+        def __init__(self):
+            self.__Container = list()
 
         def push(self, value):
-            self.Container.append(value)
+            self.__Container.append(value)
 
         def pop(self):
-            return self.Container.pop()
+            return self.__Container.pop()
 
         def top(self):
-            temp = self.Container.pop()
-            self.Container.append(temp)
+            temp = self.__Container.pop()
+            self.__Container.append(temp)
             return temp
 
         def length(self):
-            return len(self.Container)
+            return len(self.__Container)
+
+        def getStack(self):
+            return self.__Container
 
 
     class Scope:
-        __scopeType = str()
-        __scopeSt = list()
 
         def __init__(self, scope_type):
             self.__scopeType = scope_type
+            self.__scopeSt = list()
 
         def get_scope_st(self):
             return self.__scopeSt
 
-        def search_st(self, symbol_table, en_type, en_name):
-            if symbol_table == None:
-                symbol_table = self.__scopeSt
 
-            for entity in symbol_table:
-                if entity.get_entity_name() == en_name and entity.get_entity_type == en_type:
-                    if en_type == "variable":
-                        return entity.get_data_type()
-                    elif en_type == "function":
-                        return entity.get_output_params()
+        def add_to_scope_st (self , entity) :
+            self.__scopeSt.append(entity)
+
+        def search_var_in_st(self, var_name):
+            for entity in self.__scopeSt:
+                if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
+                    return entity.get_data_type()
             return None
+
+        def search_func_in_st(self, func_name):
+            for entity in self.__scopeSt:
+                if entity.get_entity_type() == "function" and entity.get_entity_name() == func_name:
+                    return (entity.get_input_params(), entity.get_output_params())
+
+            return None
+
 
         def get_scope_type(self):
             return self.__scopeType
 
 
     class RootScope(Scope):
-        __declareSt = list()
+        def __init__(self,scopeType):
+            super().__init__(scopeType)
+            self.__declareSt = list()
+
 
         def add_to_declare_st(self, entity):
             self.__declareSt.append(entity)
 
-        def is_exist_entity(self, entity_name):
+        def is_exist_entity(self, entity_name):  ##TODO Impelemnet this again
             for entity in self.__declareSt:
                 if entity.get_entity_name() == entity_name:
                     return True
             return False
 
+        def search_var_in_dclst(self, var_name):
+            for entity in self.__declareSt:
+                if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
+                    return entity.get_data_type()
+            return None
+
+        def search_func_in_dclst(self, func_name):
+            for entity in self.__declareSt:
+                if entity.get_entity_type() == "function" and entity.get_entity_name() == func_name:
+                    return (entity.get_input_params(), entity.get_output_params())
+
+            return None
         def get_declare_St(self):
             return self.__declareSt
+
 
         # def show_me_st(self):
         #     for entity in self.__declareSt:
@@ -96,11 +122,10 @@ else:
 
 
     class Entity:
-        __enType = str()
-        __enName = str()
 
         def __init__(self, entity_type):
             self.__enType = entity_type
+            self.__enName = str()
 
         def get_entity_type(self):
             return self.__enType
@@ -113,8 +138,11 @@ else:
 
 
     class FunctionEntity(Entity):
-        __inputParams = list()
-        __outputParams = list()
+
+        def __init__(self,entity_type):
+            super().__init__(entity_type)
+            self.__inputParams = list()
+            self.__outputParams = list()
 
         def checksignature(self, inputparams, outputparams):
             pass
@@ -133,9 +161,12 @@ else:
 
 
     class VariableEntity(Entity):
-        __dataType = str()  ## int float double string
-        __Value = str()  # TODO  may use in future
-        __const = False
+
+        def __init__(self,entity_type):
+            super().__init__(entity_type)
+            self.__dataType = str()  ## int float double string
+            self.__Value = str()  # TODO  may use in future
+            self.__const = False
 
         def set_data_type(self, data_type):
             self.__dataType = data_type
@@ -205,14 +236,16 @@ else:
 
 # This class defines a complete listener for a parse tree produced by LuluParser.
 class LuluListener(ParseTreeListener):
-    __typeStack = Stack()
+
 
     def __init__(self):
-        self.programStack = Stack()
+        self.__programStack = Stack()
+        self.__typeStack = Stack()
 
     def initial_state(self):
         root_scope = RootScope('root')
-        self.programStack.push(root_scope)
+
+        self.__programStack.push(root_scope)
 
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
@@ -248,11 +281,25 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#var_def.
     def enterVar_def(self, ctx: LuluParser.Var_defContext):
+        self.__typeStack.push(Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type])
+
+
+
+
         pass
 
     # Exit a parse tree produced by LuluParser#var_def.
     def exitVar_def(self, ctx: LuluParser.Var_defContext):
+        self.__typeStack.pop()
+
+
+
         pass
+
+
+
+
+
 
     # Enter a parse tree produced by LuluParser#var_val.
     def enterVar_val(self, ctx: LuluParser.Var_valContext):
@@ -260,28 +307,44 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#var_val.
     def exitVar_val(self, ctx: LuluParser.Var_valContext):
-        # root_scope = self.programStack.top()
-        # if root_scope.is_exist_entity(ctx.ref().Identifiers().getText()):
-        #     print("dada bad ridia , yeksan nabayad bashan")
-        #     exit()
-        # if ctx.getChildCount() == 3:
-        #     # TODO change expr
-        #     rhs_type = Lexer_Dic[(ctx.expr().getChild(0).getChild(0).getSymbol().type)]
-        #     parent_ctx = ctx.parentCtx
-        #     lhs_type = Lexer_Dic[(parent_ctx.data_type().getChild(0).getSymbol().type)]
-        #     # if lhs_type == 'Identifiers':
-        #     #     if rhs_type == 'Identifiers':
-        #     #         if ctx.expr().
-        #
-        #     if not VariableEntity.check_type_conversion(lhs_type, rhs_type):
-        #         print('Type ha bayad yeksan bashand')
-        #         exit()
-        #
-        # new_variable = VariableEntity("variable")
-        # variable_name = ctx.ref().Identifiers().getText()
-        # new_variable.set_entity_name(variable_name)
-        # root_scope.add_to_declare_st(new_variable)
-        pass
+        var_name = ctx.ref().Identifiers().getText()
+
+        current_scope = self.__programStack.top()
+
+        current_scope_type = current_scope.get_scope_type()
+
+        if current_scope_type == 'root':
+            search_result = current_scope.search_var_in_dclst(var_name)
+        else:
+            search_result = current_scope.search_var_in_dclst(var_name)
+        if search_result == None:
+            if ctx.expr() != None :
+                rhs_type = self.__typeStack.pop()
+                lhs_type = self.__typeStack.pop()
+
+                if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)) :
+                    print('this is khata for type assigment ' ,var_name)
+                    exit()
+                self.__typeStack.push(lhs_type)
+
+            newVariable = VariableEntity('variable')
+            newVariable.set_entity_name(var_name)
+            # newVariable.set_data_value()
+            var_type=self.__typeStack.top()
+            newVariable.set_data_type(var_type)
+
+
+            if ctx.parentCtx.Const() != None:
+                newVariable.set_is_const()
+            if current_scope_type == 'root':
+                current_scope.add_to_declare_st(newVariable)
+            else:
+                current_scope.add_to_scope_st(newVariable)
+        else:
+            print('double declaration of ', var_name, ' detected')
+            exit()
+
+    pass
 
     # Enter a parse tree produced by LuluParser#fst_dcl.
     def enterFst_dcl(self, ctx: LuluParser.Fst_dclContext):
@@ -311,7 +374,7 @@ class LuluListener(ParseTreeListener):
     def enterType_dcl(self, ctx: LuluParser.Type_dclContext):
 
         type_name = (ctx.Identifiers()).getText()
-        root_scope = self.programStack.top()
+        root_scope = self.__programStack.top()
         if root_scope.is_exist_entity(type_name):
             root_scope.show_me_st()
             exit()
@@ -495,23 +558,21 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#expr_variable.
     def exitExpr_variable(self, ctx: LuluParser.Expr_variableContext):
+
         variable_name = ctx.variable().ref(0).getText()
-        current_scope = self.programStack.top()
-        st_to_search = str()
+
+        current_scope = self.__programStack.top()
+
         if current_scope.get_scope_type() == "root":
-            st_to_search = current_scope.get_declare_St()
+            search_st_result = current_scope.search_var_in_dclst(variable_name)
         else:
-            st_to_search = None
+            search_st_result = current_scope.search_var_in_st(variable_name)
 
-        search_st_result = str()
-
-        search_st_result = current_scope.search_st(st_to_search, "variable", variable_name)
         if search_st_result == None:
             print("variable " + variable_name + " Is not declared in this scope")
             exit()
         else:
-
-            print(type(search_st_result))
+            self.__typeStack.push(search_st_result)
 
     # Enter a parse tree produced by LuluParser#expr_funccall.
     def enterExpr_funccall(self, ctx: LuluParser.Expr_funccallContext):
