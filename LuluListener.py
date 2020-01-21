@@ -22,6 +22,11 @@ else:
 
     }
 
+    Rule_Dic = {
+        11: "type_def",
+        18: 'func_def'
+    }
+
 
     class Stack:
 
@@ -79,9 +84,31 @@ else:
         def __init__(self, scopeType):
             super().__init__(scopeType)
             self.__declareSt = list()
+            self.__mainctx = list()
 
         def add_to_declare_st(self, entity):
             self.__declareSt.append(entity)
+
+        def add_to_main_context(self,entity):
+            self.__mainctx.append(entity)
+
+
+        def search_class_in_mainctx(self, class_name):
+            for entity in self.__mainctx:
+                if entity.get_entity_type() == "class" and entity.get_entity_name() == class_name:
+                    return (entity.get_entity_name())
+            return None
+
+        def search_func_in_mainctx(self, func_signature):
+
+            for entity in self.__mainctx:
+                if entity.get_entity_type() == "function" :
+                    #TODO creat get_function_signature
+                    if FunctionEntity.checksignature(func_signature,(entity.get_entity_name(),entity.get_input_params(),entity.get_output_params())):
+                        return (entity.get_input_params(), entity.get_output_params())
+
+            return None
+
 
         def is_exist_entity(self, entity_name):  ##TODO Impelemnet this again
             for entity in self.__declareSt:
@@ -141,8 +168,17 @@ else:
             self.__inputParams = list()
             self.__outputParams = list()
 
-        def checksignature(self, inputparams, outputparams):
-            pass
+        @staticmethod
+        def checksignature(signature1, signature2):
+            for i in range(3):
+                if signature1[i]!=signature2[i]:
+                    return False
+            return True
+
+
+
+
+
 
         def set_input_params(self, inputparams):
             self.__inputParams = inputparams
@@ -259,13 +295,22 @@ else:
 
         @staticmethod
         def is_array(ctx):
+            '''
+            Check if this ctx contains array variable int x[][]
+            '''
             if ctx.getChildCount() > 1:
                 return True
             return False
 
 
-    class TypeEntity(Entity):
-        pass
+    class ClassEntity(Entity):
+        def __init__(self, entity_type):
+            super().__init__(entity_type)
+
+
+
+
+
 
     # This class defines a complete listener for a parse tree produced by LuluParser.
 
@@ -276,6 +321,7 @@ class LuluListener(ParseTreeListener):
     def __init__(self):
         self.__programStack = Stack()
         self.__typeStack = Stack()
+        self.__arrayType = str()
 
     def initial_state(self):
         root_scope = RootScope('root')
@@ -284,10 +330,66 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
-        pass
+
+
+
+        root_scope=self.__programStack.top()
+        for i in range(len(ctx.fst_def())):
+
+            '''check type definition'''
+            if Rule_Dic[ctx.fst_def(i).getChild(0).getRuleIndex()]=="type_def":
+                '''ud_class_name : user defined class name'''
+                ud_class_name = (ctx.fst_def(i).getChild(0).Identifiers(0).getText())
+                if root_scope.search_class_in_mainctx(ud_class_name) != None :
+                    print("Double declaration of type '",ud_class_name, "'")
+                    exit()
+                else:
+                    newClass=ClassEntity("class")
+                    newClass.set_entity_name(ud_class_name)
+                    root_scope.add_to_main_context(newClass)
+
+            else:
+
+
+                '''it is a func_def rule '''
+
+
+                func_name=(ctx.fst_def(i).getChild(0).Identifiers().getText())
+
+                output_params=ctx.fst_def(i).getChild(0).func_def_args()[0].getText()
+
+                input_params=(ctx.fst_def(i).getChild(0).func_def_args()[1]).getText()
+
+
+                if root_scope.search_func_in_mainctx((func_name,input_params,output_params))!=None:
+                    print("Double declaration of functions")
+                    exit()
+
+                #TODO Find a better way to handle input and output parameters
+                newFunction=FunctionEntity("function")
+
+                newFunction.set_input_params(input_params)
+                newFunction.set_output_params(output_params)
+                newFunction.set_entity_name(func_name)
+
+
+                root_scope.add_to_main_context(newFunction)
+
+
+
+
+        #
+        # for i in range(1, program_node_child_count):
+        #     if ctx.parentCtx.parentCtx.getChild(i).getChild(0).getRuleIndex() == 18:
+        #         func_def_ctx = ctx.parentCtx.parentCtx.getChild(i).getChild(0)
+        #         print(func_def_ctx.Identifiers())
+
+
 
     # Exit a parse tree produced by LuluParser#program.
     def exitProgram(self, ctx: LuluParser.ProgramContext):
+        # TODO  Cehck function declaration at the end of the program
+
         pass
 
     # Enter a parse tree produced by LuluParser#const_val.
@@ -316,7 +418,12 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#var_def.
     def enterVar_def(self, ctx: LuluParser.Var_defContext):
-        self.__typeStack.push(Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type])
+        variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
+
+        self.__typeStack.push(variable_type)
+
+        '''setting array type for future use when we have array'''
+        self.__arrayType = variable_type
 
         pass
 
@@ -332,6 +439,7 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#var_val.
     def exitVar_val(self, ctx: LuluParser.Var_valContext):
+
         var_name = ctx.ref().Identifiers().getText()
 
         current_scope = self.__programStack.top()
@@ -344,10 +452,15 @@ class LuluListener(ParseTreeListener):
             search_result = current_scope.search_var_in_dclst(var_name)
 
         if search_result == None:
-            if ctx.expr()==None and ctx.parentCtx.Const()!=None:
-                print("const value should be initialized first")
+            if ctx.expr() == None and ctx.parentCtx.Const() != None:
+                print("const variable " + var_name + "  should be initialized when define")
                 exit()
             if ctx.expr() != None:
+
+                # print(list(ctx.getRuleContext().getText().split("=")[1]))
+                # print(ctx.expr().getChild(0).getRuleIndex())
+
+                # TODO set value when we have [1,2,3,4,5]
 
                 '''checking assignment sides have convertible type'''
                 rhs_type = self.__typeStack.pop()
@@ -361,15 +474,15 @@ class LuluListener(ParseTreeListener):
             ''' detect if variable is an array '''
             if ArrayEntity.is_array(ctx.ref()):
 
-                newArray=ArrayEntity('array')
+                newArray = ArrayEntity('array')
                 newArray.set_entity_name(var_name)
                 newArray.set_data_type(self.__typeStack.top())
-                array_dimensions=[]
+                array_dimensions = []
 
                 ## get
                 for dimension in ctx.ref().expr():
                     if (dimension.getText()).isnumeric():
-                        array_dimensions.append(int (dimension.getText()))
+                        array_dimensions.append(int(dimension.getText()))
                     else:
                         array_dimensions.append(None)
                 newArray.set_dimension(array_dimensions)
@@ -401,13 +514,6 @@ class LuluListener(ParseTreeListener):
             print('double declaration of ', var_name, ' detected')
             exit()
 
-
-
-
-
-
-
-
     pass
 
     # Enter a parse tree produced by LuluParser#fst_dcl.
@@ -416,8 +522,6 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#fst_dcl.
     def exitFst_dcl(self, ctx: LuluParser.Fst_dclContext):
-        print(self.__typeStack.getStack())
-
         pass
 
     # Enter a parse tree produced by LuluParser#func_dcl.
@@ -426,6 +530,36 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#func_dcl.
     def exitFunc_dcl(self, ctx: LuluParser.Func_dclContext):
+        # ctx.getRuleIndex()
+        #
+        # eqaul_exist = (self.search_node_childrens(ctx, "="))
+        # function_name = ctx.Identifiers().getText()
+        # ip_params = list()
+        # op_params = list()
+        #
+        # if eqaul_exist == -1:
+        #     ip_params = (ctx.dcl_args(0).getText()).split(',')
+        #     op_params = None
+        # else:
+        #     ip_params = (ctx.dcl_args(1).getText()).split(',')
+        #     op_params = (ctx.dcl_args(0).getText()).split(',')
+        #
+        # rscope = self.__programStack.top()
+        # for entity in rscope.get_declare_St():
+        #     if (entity.get_entity_type() == "function") and (entity.get_entity_name() == function_name):
+        #
+        #         if entity.matchsign(ip_params, op_params):
+        #             print("Double Declaration of function")
+        #             exit()
+        #
+        # newfunction = FunctionEntity("function")
+        # newfunction.set_input_params(ip_params)
+        # newfunction.set_output_params(op_params)
+        # newfunction.set_entity_name(function_name)
+        # rscope.add_to_declare_st(newfunction)
+        #
+        # ## add new entity here
+        # pass
         pass
 
     # Enter a parse tree produced by LuluParser#dcl_args.
@@ -439,14 +573,19 @@ class LuluListener(ParseTreeListener):
     # Enter a parse tree produced by LuluParser#type_dcl.
     def enterType_dcl(self, ctx: LuluParser.Type_dclContext):
 
-        type_name = (ctx.Identifiers()).getText()
+        class_name = (ctx.Identifiers()).getText()
         root_scope = self.__programStack.top()
-        if root_scope.is_exist_entity(type_name):
-            root_scope.show_me_st()
+        if root_scope.is_exist_entity(class_name):
+            print("Double Declaration of type ", class_name)
             exit()
+        else:
+            if root_scope.search_class_in_mainctx(class_name) == None:
+                print("type '" + class_name +  "' is not defined")
+                exit()
 
-        newType = TypeEntity('type')
-        newType.set_entity_name(type_name)
+
+        newType = ClassEntity('class')
+        newType.set_entity_name(class_name)
         root_scope.add_to_declare_st(newType)
 
     # Exit a parse tree produced by LuluParser#type_dcl.
@@ -583,7 +722,7 @@ class LuluListener(ParseTreeListener):
         if ctx.getChildCount() > 1:  ## We have array under ref
             array_dimension_size = len(ctx.expr())
             for i in range(array_dimension_size):
-                if self.__typeStack.pop()[0] not in "Int_const Int": ## TODO Implement type casting
+                if self.__typeStack.pop()[0] not in "Int_const Int":  ## TODO Implement type casting
                     print("array dimension ha ro int bede ")
                     exit()
 
@@ -683,16 +822,23 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#expr_const_val.
     def exitExpr_const_val(self, ctx: LuluParser.Expr_const_valContext):
 
-        ## TODO  STring_const has problem
+        ## TODO  String_const has problem
         self.__typeStack.push(Lexer_Dic[ctx.const_val().getChild(0).getSymbol().type])
 
     # Enter a parse tree produced by LuluParser#expr_array.
     def enterExpr_array(self, ctx: LuluParser.Expr_arrayContext):
+
         pass
 
     # Exit a parse tree produced by LuluParser#expr_array.
     def exitExpr_array(self, ctx: LuluParser.Expr_arrayContext):
-        pass
+        '''
+        we added this code here to get rid of popping 2 element from typestack
+        when we have case like this
+        int x=[12,....];
+        '''
+
+        self.__typeStack.push(self.__arrayType)
 
     # Enter a parse tree produced by LuluParser#Allocate_func.
     def enterAllocate_func(self, ctx: LuluParser.Allocate_funcContext):
@@ -752,8 +898,27 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#array.
     def enterArray(self, ctx: LuluParser.ArrayContext):
+
         pass
 
     # Exit a parse tree produced by LuluParser#array.
     def exitArray(self, ctx: LuluParser.ArrayContext):
-        pass
+
+        number_of_array_element = len(ctx.expr())
+
+        for i in range(number_of_array_element):
+            arr_ele_type = self.__typeStack.pop()
+
+            ## TODO it seemes we dont need type convesion func for this case
+
+            if arr_ele_type != self.__arrayType and arr_ele_type.split("_")[0] != self.__arrayType:
+                # TODO Check if this way is a good way when we have funccall
+
+                '''
+                to get array_elements value we use #total_element-i-1 as index of ctx.expr()
+                '''
+                array_ele_value = (ctx.expr(number_of_array_element - i - 1).getText())
+                # TODO output result
+                print(arr_ele_type)
+                print("type " + array_ele_value + " does not match ", self.__arrayType)
+                exit()
