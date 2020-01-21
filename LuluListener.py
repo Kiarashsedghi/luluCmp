@@ -55,8 +55,7 @@ else:
         def get_scope_st(self):
             return self.__scopeSt
 
-
-        def add_to_scope_st (self , entity) :
+        def add_to_scope_st(self, entity):
             self.__scopeSt.append(entity)
 
         def search_var_in_st(self, var_name):
@@ -72,16 +71,14 @@ else:
 
             return None
 
-
         def get_scope_type(self):
             return self.__scopeType
 
 
     class RootScope(Scope):
-        def __init__(self,scopeType):
+        def __init__(self, scopeType):
             super().__init__(scopeType)
             self.__declareSt = list()
-
 
         def add_to_declare_st(self, entity):
             self.__declareSt.append(entity)
@@ -104,9 +101,9 @@ else:
                     return (entity.get_input_params(), entity.get_output_params())
 
             return None
+
         def get_declare_St(self):
             return self.__declareSt
-
 
         # def show_me_st(self):
         #     for entity in self.__declareSt:
@@ -139,7 +136,7 @@ else:
 
     class FunctionEntity(Entity):
 
-        def __init__(self,entity_type):
+        def __init__(self, entity_type):
             super().__init__(entity_type)
             self.__inputParams = list()
             self.__outputParams = list()
@@ -162,7 +159,7 @@ else:
 
     class VariableEntity(Entity):
 
-        def __init__(self,entity_type):
+        def __init__(self, entity_type):
             super().__init__(entity_type)
             self.__dataType = str()  ## int float double string
             self.__Value = str()  # TODO  may use in future
@@ -199,7 +196,7 @@ else:
                     return True
                 return False
             elif l_type == 'Float':
-                if r_type in 'Float Int':
+                if r_type in 'Float Real Int':
                     return True
                 return False
             elif l_type == 'String':
@@ -228,6 +225,45 @@ else:
                 return False
 
 
+    class ArrayEntity(Entity):
+        def __init__(self, entity_type):
+            super().__init__(entity_type)
+            self.__dataType = str()  ## int float double string
+            self.__Value = str()  # TODO  may use in future
+            self.__dimension = list()
+            self.__const = False
+
+        def set_data_type(self, data_type):
+            self.__dataType = data_type
+
+        def get_data_type(self):
+            return self.__dataType
+
+        def set_data_value(self, value):
+            self.__Value = value
+
+        def get_data_value(self):
+            return self.__Value
+
+        def set_dimension(self, dimension):
+            self.__dimension = dimension
+
+        def get_dimension(self):
+            return self.__dimension
+
+        def set_is_const(self):
+            self.__const = True
+
+        def is_const(self):
+            return self.__const
+
+        @staticmethod
+        def is_array(ctx):
+            if ctx.getChildCount() > 1:
+                return True
+            return False
+
+
     class TypeEntity(Entity):
         pass
 
@@ -236,7 +272,6 @@ else:
 
 # This class defines a complete listener for a parse tree produced by LuluParser.
 class LuluListener(ParseTreeListener):
-
 
     def __init__(self):
         self.__programStack = Stack()
@@ -261,7 +296,7 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#const_val.
     def exitConst_val(self, ctx: LuluParser.Const_valContext):
-        self.__typeStack.push(Lexer_Dic[ctx.getChild(0).getSymbol().type])
+        pass
 
     # Enter a parse tree produced by LuluParser#block.
     def enterBlock(self, ctx: LuluParser.BlockContext):
@@ -283,23 +318,13 @@ class LuluListener(ParseTreeListener):
     def enterVar_def(self, ctx: LuluParser.Var_defContext):
         self.__typeStack.push(Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type])
 
-
-
-
         pass
 
     # Exit a parse tree produced by LuluParser#var_def.
     def exitVar_def(self, ctx: LuluParser.Var_defContext):
         self.__typeStack.pop()
 
-
-
         pass
-
-
-
-
-
 
     # Enter a parse tree produced by LuluParser#var_val.
     def enterVar_val(self, ctx: LuluParser.Var_valContext):
@@ -317,32 +342,71 @@ class LuluListener(ParseTreeListener):
             search_result = current_scope.search_var_in_dclst(var_name)
         else:
             search_result = current_scope.search_var_in_dclst(var_name)
+
         if search_result == None:
-            if ctx.expr() != None :
+            if ctx.expr()==None and ctx.parentCtx.Const()!=None:
+                print("const value should be initialized first")
+                exit()
+            if ctx.expr() != None:
+
+                '''checking assignment sides have convertible type'''
                 rhs_type = self.__typeStack.pop()
                 lhs_type = self.__typeStack.pop()
 
-                if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)) :
-                    print('this is khata for type assigment ' ,var_name)
+                if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)):
+                    print('this is khata for type assigment ', var_name)
                     exit()
                 self.__typeStack.push(lhs_type)
 
-            newVariable = VariableEntity('variable')
-            newVariable.set_entity_name(var_name)
-            # newVariable.set_data_value()
-            var_type=self.__typeStack.top()
-            newVariable.set_data_type(var_type)
+            ''' detect if variable is an array '''
+            if ArrayEntity.is_array(ctx.ref()):
 
+                newArray=ArrayEntity('array')
+                newArray.set_entity_name(var_name)
+                newArray.set_data_type(self.__typeStack.top())
+                array_dimensions=[]
 
-            if ctx.parentCtx.Const() != None:
-                newVariable.set_is_const()
-            if current_scope_type == 'root':
-                current_scope.add_to_declare_st(newVariable)
+                ## get
+                for dimension in ctx.ref().expr():
+                    if (dimension.getText()).isnumeric():
+                        array_dimensions.append(int (dimension.getText()))
+                    else:
+                        array_dimensions.append(None)
+                newArray.set_dimension(array_dimensions)
+
+                if ctx.parentCtx.Const() != None:
+                    newArray.set_is_const()
+
+                if current_scope_type == 'root':
+                    current_scope.add_to_declare_st(newArray)
+                else:
+                    current_scope.add_to_scope_st(newArray)
+
             else:
-                current_scope.add_to_scope_st(newVariable)
+                newVariable = VariableEntity('variable')
+                newVariable.set_entity_name(var_name)
+                # newVariable.set_data_value() ## We dont need this right now
+                var_type = self.__typeStack.top()
+                newVariable.set_data_type(var_type)
+                if ctx.parentCtx.Const() != None:
+                    newVariable.set_is_const()
+                if current_scope_type == 'root':
+                    current_scope.add_to_declare_st(newVariable)
+                else:
+                    current_scope.add_to_scope_st(newVariable)
+
+
+
         else:
             print('double declaration of ', var_name, ' detected')
             exit()
+
+
+
+
+
+
+
 
     pass
 
@@ -352,6 +416,8 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#fst_dcl.
     def exitFst_dcl(self, ctx: LuluParser.Fst_dclContext):
+        print(self.__typeStack.getStack())
+
         pass
 
     # Enter a parse tree produced by LuluParser#func_dcl.
@@ -514,6 +580,13 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#ref.
     def exitRef(self, ctx: LuluParser.RefContext):
+        if ctx.getChildCount() > 1:  ## We have array under ref
+            array_dimension_size = len(ctx.expr())
+            for i in range(array_dimension_size):
+                if self.__typeStack.pop()[0] not in "Int_const Int": ## TODO Implement type casting
+                    print("array dimension ha ro int bede ")
+                    exit()
+
         pass
 
     # Enter a parse tree produced by LuluParser#Logical_or_op.
@@ -559,7 +632,7 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#expr_variable.
     def exitExpr_variable(self, ctx: LuluParser.Expr_variableContext):
 
-        variable_name = ctx.variable().ref(0).getText()
+        variable_name = ctx.variable().ref(0).Identifiers().getText()
 
         current_scope = self.__programStack.top()
 
@@ -610,7 +683,8 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#expr_const_val.
     def exitExpr_const_val(self, ctx: LuluParser.Expr_const_valContext):
 
-        pass
+        ## TODO  STring_const has problem
+        self.__typeStack.push(Lexer_Dic[ctx.const_val().getChild(0).getSymbol().type])
 
     # Enter a parse tree produced by LuluParser#expr_array.
     def enterExpr_array(self, ctx: LuluParser.Expr_arrayContext):
