@@ -15,9 +15,23 @@ def main(argv):
     lexer = LuluLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = LuluParser(stream)
+
     tree = parser.program()
+
+
+
     compiler_listener= LuluListener()
     compiler_listener.initial_state()
+
+
+
+    f = open("./prg_functions", 'r')
+    for line in f:
+        (compiler_listener.future_look(line.split(" ")[:-1]))
+
+    f.close()
+
+
     walker = ParseTreeWalker()
     walker.walk(compiler_listener, tree)
 

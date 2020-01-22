@@ -231,28 +231,28 @@ class LuluParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'{'", "'}'", "';'", "'['", "']'", "','", 
-                     "'='", "'('", "')'", "':'", "'.'", "'!'", "'~'", "'-'", 
-                     "'+'", "'int'", "'float'", "'bool'", "'string'", "'function'", 
-                     "'if'", "'else'", "'switch'", "'default'", "'break'", 
-                     "'for'", "'while'", "'continue'", "'const'", "'caseof'", 
-                     "'this'", "'super'", "'type'", "'declare'", "'read'", 
-                     "'write'", "'nil'", "'destruct'", "'allocate'", "'public'", 
+    literalNames = [ "<INVALID>", "'{'", "'}'", "';'", "'['", "']'", "','",
+                     "'='", "'('", "')'", "':'", "'.'", "'!'", "'~'", "'-'",
+                     "'+'", "'int'", "'float'", "'bool'", "'string'", "'function'",
+                     "'if'", "'else'", "'switch'", "'default'", "'break'",
+                     "'for'", "'while'", "'continue'", "'const'", "'caseof'",
+                     "'this'", "'super'", "'type'", "'declare'", "'read'",
+                     "'write'", "'nil'", "'destruct'", "'allocate'", "'public'",
                      "'private'", "'protected'" ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "Int", "Float", "Bool", "String", "Function", "If", 
-                      "Else", "Switch", "Default", "Break", "For", "While", 
-                      "Continue", "Const", "Caseof", "This", "Super", "Type", 
-                      "Declare", "Read", "Write", "Nil", "Destruct", "Allocate", 
-                      "Public", "Private", "Protected", "Multiplicative", 
-                      "Unary", "Additive", "Relational", "Equality", "Bitwise_AND", 
-                      "Bitwise_inclusive_OR", "Logical_AND", "Logical_OR", 
-                      "Bool_const", "Int_const", "Real_const", "Exponent", 
-                      "String_const", "Identifiers", "Multi_line_Comment", 
+    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "Int", "Float", "Bool", "String", "Function", "If",
+                      "Else", "Switch", "Default", "Break", "For", "While",
+                      "Continue", "Const", "Caseof", "This", "Super", "Type",
+                      "Declare", "Read", "Write", "Nil", "Destruct", "Allocate",
+                      "Public", "Private", "Protected", "Multiplicative",
+                      "Unary", "Additive", "Relational", "Equality", "Bitwise_AND",
+                      "Bitwise_inclusive_OR", "Logical_AND", "Logical_OR",
+                      "Bool_const", "Int_const", "Real_const", "Exponent",
+                      "String_const", "Identifiers", "Multi_line_Comment",
                       "Single_Line_Comment", "WS" ]
 
     RULE_program = 0
@@ -284,11 +284,11 @@ class LuluParser ( Parser ):
     RULE_expr = 26
     RULE_array = 27
 
-    ruleNames =  [ "program", "const_val", "block", "stmt", "var_def", "var_val", 
-                   "fst_dcl", "func_dcl", "dcl_args", "type_dcl", "fst_def", 
-                   "type_def", "component", "access_modifier", "func_call", 
-                   "func_handler", "params", "func_def_args", "func_def", 
-                   "cond_stmt", "switch_body", "loop_stmt", "data_type", 
+    ruleNames =  [ "program", "const_val", "block", "stmt", "var_def", "var_val",
+                   "fst_dcl", "func_dcl", "dcl_args", "type_dcl", "fst_def",
+                   "type_def", "component", "access_modifier", "func_call",
+                   "func_handler", "params", "func_def_args", "func_def",
+                   "cond_stmt", "switch_body", "loop_stmt", "data_type",
                    "assign", "variable", "ref", "expr", "array" ]
 
     EOF = Token.EOF
@@ -408,13 +408,13 @@ class LuluParser ( Parser ):
                 self.fst_dcl()
 
 
-            self.state = 60 
+            self.state = 60
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
                 self.state = 59
                 self.fst_def()
-                self.state = 62 
+                self.state = 62
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LuluParser.T__7) | (1 << LuluParser.Function) | (1 << LuluParser.Type))) != 0)):
@@ -880,7 +880,7 @@ class LuluParser ( Parser ):
             self.match(LuluParser.Declare)
             self.state = 120
             self.match(LuluParser.T__0)
-            self.state = 124 
+            self.state = 124
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
@@ -903,7 +903,7 @@ class LuluParser ( Parser ):
                     pass
 
 
-                self.state = 126 
+                self.state = 126
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LuluParser.T__7) | (1 << LuluParser.Int) | (1 << LuluParser.Float) | (1 << LuluParser.Bool) | (1 << LuluParser.String) | (1 << LuluParser.Const) | (1 << LuluParser.Identifiers))) != 0)):
@@ -1050,7 +1050,7 @@ class LuluParser ( Parser ):
                     self.state = 148
                     self.match(LuluParser.T__3)
                     self.state = 149
-                    self.match(LuluParser.T__4) 
+                    self.match(LuluParser.T__4)
                 self.state = 154
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,13,self._ctx)
@@ -1082,11 +1082,11 @@ class LuluParser ( Parser ):
                             self.state = 158
                             self.match(LuluParser.T__3)
                             self.state = 159
-                            self.match(LuluParser.T__4) 
+                            self.match(LuluParser.T__4)
                         self.state = 164
                         self._errHandler.sync(self)
                         _alt = self._interp.adaptivePredict(self._input,14,self._ctx)
-             
+
                 self.state = 169
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,15,self._ctx)
@@ -1259,13 +1259,13 @@ class LuluParser ( Parser ):
 
             self.state = 183
             self.match(LuluParser.T__0)
-            self.state = 185 
+            self.state = 185
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
                 self.state = 184
                 self.component()
-                self.state = 187 
+                self.state = 187
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LuluParser.T__7) | (1 << LuluParser.Int) | (1 << LuluParser.Float) | (1 << LuluParser.Bool) | (1 << LuluParser.String) | (1 << LuluParser.Function) | (1 << LuluParser.Const) | (1 << LuluParser.Public) | (1 << LuluParser.Private) | (1 << LuluParser.Protected) | (1 << LuluParser.Identifiers))) != 0)):
@@ -1653,6 +1653,7 @@ class LuluParser ( Parser ):
         _prevctx = localctx
         _startState = 34
         self.enterRecursionRule(localctx, 34, self.RULE_func_def_args, _p)
+
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
@@ -1704,7 +1705,7 @@ class LuluParser ( Parser ):
                         _la = self._input.LA(1)
 
                     self.state = 251
-                    self.match(LuluParser.Identifiers) 
+                    self.match(LuluParser.Identifiers)
                 self.state = 257
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,27,self._ctx)
@@ -1715,7 +1716,11 @@ class LuluParser ( Parser ):
             self._errHandler.recover(self, re)
         finally:
             self.unrollRecursionContexts(_parentctx)
+        f = open("./prg_functions", 'a')
+        f.writelines("&& ")
+        f.close()
         return localctx
+
 
 
     class Func_defContext(ParserRuleContext):
@@ -1756,7 +1761,6 @@ class LuluParser ( Parser ):
 
 
     def func_def(self):
-
         localctx = LuluParser.Func_defContext(self, self._ctx, self.state)
         self.enterRule(localctx, 36, self.RULE_func_def)
         self._la = 0 # Token type
@@ -1765,6 +1769,7 @@ class LuluParser ( Parser ):
             self.state = 263
             self._errHandler.sync(self)
             _la = self._input.LA(1)
+
             if _la==LuluParser.T__7:
                 self.state = 258
                 self.match(LuluParser.T__7)
@@ -1800,6 +1805,17 @@ class LuluParser ( Parser ):
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
+
+
+        '''just for func-def in program node not "type" node'''
+        #TODO should  i correct children??
+        if localctx.parentCtx.getRuleIndex()==10:
+            f = open("./prg_functions", 'a')
+            f.writelines(localctx.getRuleContext().getText()+" ")
+            f.writelines(localctx.Identifiers().getText()+" ")
+            f.writelines("\n")
+
+            f.close()
         return localctx
 
 
@@ -1983,7 +1999,7 @@ class LuluParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 299 
+            self.state = 299
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
@@ -1995,7 +2011,7 @@ class LuluParser ( Parser ):
                 self.match(LuluParser.T__9)
                 self.state = 298
                 self.block()
-                self.state = 301 
+                self.state = 301
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if not (_la==LuluParser.Caseof):
@@ -2189,6 +2205,10 @@ class LuluParser ( Parser ):
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
+        if self.state==231 or self.state==243:
+            f = open("./prg_functions", 'a')
+            f.writelines(localctx.getText()+" ")
+            f.close()
         return localctx
 
 
@@ -2338,7 +2358,7 @@ class LuluParser ( Parser ):
                     self.state = 353
                     self.match(LuluParser.T__10)
                     self.state = 354
-                    self.ref() 
+                    self.ref()
                 self.state = 359
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,43,self._ctx)
@@ -2400,7 +2420,7 @@ class LuluParser ( Parser ):
                     self.state = 362
                     self.expr(0)
                     self.state = 363
-                    self.match(LuluParser.T__4) 
+                    self.match(LuluParser.T__4)
                 self.state = 369
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,44,self._ctx)
@@ -2420,6 +2440,45 @@ class LuluParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
+
+        def getRuleIndex(self):
+            return LuluParser.RULE_expr
+
+
+        def copyFrom(self, ctx:ParserRuleContext):
+            super().copyFrom(ctx)
+
+
+    class Logical_or_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
+
+        def Logical_OR(self):
+            return self.getToken(LuluParser.Logical_OR, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterLogical_or_op" ):
+                listener.enterLogical_or_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitLogical_or_op" ):
+                listener.exitLogical_or_op(self)
+
+
+    class Sumsub_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
         def expr(self, i:int=None):
             if i is None:
                 return self.getTypedRuleContexts(LuluParser.ExprContext)
@@ -2427,63 +2486,310 @@ class LuluParser ( Parser ):
                 return self.getTypedRuleContext(LuluParser.ExprContext,i)
 
 
-        def array(self):
-            return self.getTypedRuleContext(LuluParser.ArrayContext,0)
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterSumsub_op" ):
+                listener.enterSumsub_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitSumsub_op" ):
+                listener.exitSumsub_op(self)
 
 
-        def const_val(self):
-            return self.getTypedRuleContext(LuluParser.Const_valContext,0)
+    class UnaryopContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self):
+            return self.getTypedRuleContext(LuluParser.ExprContext,0)
 
 
-        def Allocate(self):
-            return self.getToken(LuluParser.Allocate, 0)
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterUnaryop" ):
+                listener.enterUnaryop(self)
 
-        def func_handler(self):
-            return self.getTypedRuleContext(LuluParser.Func_handlerContext,0)
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitUnaryop" ):
+                listener.exitUnaryop(self)
 
 
-        def func_call(self):
-            return self.getTypedRuleContext(LuluParser.Func_callContext,0)
+    class Expr_variableContext(ExprContext):
 
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
 
         def variable(self):
             return self.getTypedRuleContext(LuluParser.VariableContext,0)
 
 
-        def Nil(self):
-            return self.getToken(LuluParser.Nil, 0)
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterExpr_variable" ):
+                listener.enterExpr_variable(self)
 
-        def Multiplicative(self):
-            return self.getToken(LuluParser.Multiplicative, 0)
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitExpr_variable" ):
+                listener.exitExpr_variable(self)
 
-        def Relational(self):
-            return self.getToken(LuluParser.Relational, 0)
 
-        def Equality(self):
-            return self.getToken(LuluParser.Equality, 0)
+    class Expr_funccallContext(ExprContext):
 
-        def Bitwise_AND(self):
-            return self.getToken(LuluParser.Bitwise_AND, 0)
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
 
-        def Bitwise_inclusive_OR(self):
-            return self.getToken(LuluParser.Bitwise_inclusive_OR, 0)
+        def func_call(self):
+            return self.getTypedRuleContext(LuluParser.Func_callContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterExpr_funccall" ):
+                listener.enterExpr_funccall(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitExpr_funccall" ):
+                listener.exitExpr_funccall(self)
+
+
+    class Logical_and_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
 
         def Logical_AND(self):
             return self.getToken(LuluParser.Logical_AND, 0)
 
-        def Logical_OR(self):
-            return self.getToken(LuluParser.Logical_OR, 0)
-
-        def getRuleIndex(self):
-            return LuluParser.RULE_expr
-
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterExpr" ):
-                listener.enterExpr(self)
+            if hasattr( listener, "enterLogical_and_op" ):
+                listener.enterLogical_and_op(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitExpr" ):
-                listener.exitExpr(self)
+            if hasattr( listener, "exitLogical_and_op" ):
+                listener.exitLogical_and_op(self)
+
+
+    class Expr_paranthensisContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self):
+            return self.getTypedRuleContext(LuluParser.ExprContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterExpr_paranthensis" ):
+                listener.enterExpr_paranthensis(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitExpr_paranthensis" ):
+                listener.exitExpr_paranthensis(self)
+
+
+    class Expr_const_valContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def const_val(self):
+            return self.getTypedRuleContext(LuluParser.Const_valContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterExpr_const_val" ):
+                listener.enterExpr_const_val(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitExpr_const_val" ):
+                listener.exitExpr_const_val(self)
+
+
+    class Expr_arrayContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def array(self):
+            return self.getTypedRuleContext(LuluParser.ArrayContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterExpr_array" ):
+                listener.enterExpr_array(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitExpr_array" ):
+                listener.exitExpr_array(self)
+
+
+    class Allocate_funcContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def Allocate(self):
+            return self.getToken(LuluParser.Allocate, 0)
+        def func_handler(self):
+            return self.getTypedRuleContext(LuluParser.Func_handlerContext,0)
+
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterAllocate_func" ):
+                listener.enterAllocate_func(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitAllocate_func" ):
+                listener.exitAllocate_func(self)
+
+
+    class Multiplicative_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
+
+        def Multiplicative(self):
+            return self.getToken(LuluParser.Multiplicative, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterMultiplicative_op" ):
+                listener.enterMultiplicative_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitMultiplicative_op" ):
+                listener.exitMultiplicative_op(self)
+
+
+    class Eqaulity_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
+
+        def Equality(self):
+            return self.getToken(LuluParser.Equality, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterEqaulity_op" ):
+                listener.enterEqaulity_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitEqaulity_op" ):
+                listener.exitEqaulity_op(self)
+
+
+    class Expr_nilContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def Nil(self):
+            return self.getToken(LuluParser.Nil, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterExpr_nil" ):
+                listener.enterExpr_nil(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitExpr_nil" ):
+                listener.exitExpr_nil(self)
+
+
+    class Relational_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
+
+        def Relational(self):
+            return self.getToken(LuluParser.Relational, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterRelational_op" ):
+                listener.enterRelational_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitRelational_op" ):
+                listener.exitRelational_op(self)
+
+
+    class Bitwise_inclusive_or_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
+
+        def Bitwise_inclusive_OR(self):
+            return self.getToken(LuluParser.Bitwise_inclusive_OR, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterBitwise_inclusive_or_op" ):
+                listener.enterBitwise_inclusive_or_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitBitwise_inclusive_or_op" ):
+                listener.exitBitwise_inclusive_or_op(self)
+
+
+    class Bitwise_and_opContext(ExprContext):
+
+        def __init__(self, parser, ctx:ParserRuleContext): # actually a LuluParser.ExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def expr(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(LuluParser.ExprContext)
+            else:
+                return self.getTypedRuleContext(LuluParser.ExprContext,i)
+
+        def Bitwise_AND(self):
+            return self.getToken(LuluParser.Bitwise_AND, 0)
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterBitwise_and_op" ):
+                listener.enterBitwise_and_op(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitBitwise_and_op" ):
+                listener.exitBitwise_and_op(self)
 
 
 
@@ -2501,6 +2807,10 @@ class LuluParser ( Parser ):
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,45,self._ctx)
             if la_ == 1:
+                localctx = LuluParser.UnaryopContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
+
                 self.state = 371
                 _la = self._input.LA(1)
                 if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LuluParser.T__11) | (1 << LuluParser.T__12) | (1 << LuluParser.T__13))) != 0)):
@@ -2513,6 +2823,9 @@ class LuluParser ( Parser ):
                 pass
 
             elif la_ == 2:
+                localctx = LuluParser.Expr_paranthensisContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 373
                 self.match(LuluParser.T__7)
                 self.state = 374
@@ -2522,16 +2835,25 @@ class LuluParser ( Parser ):
                 pass
 
             elif la_ == 3:
+                localctx = LuluParser.Expr_arrayContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 377
                 self.array()
                 pass
 
             elif la_ == 4:
+                localctx = LuluParser.Expr_const_valContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 378
                 self.const_val()
                 pass
 
             elif la_ == 5:
+                localctx = LuluParser.Allocate_funcContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 379
                 self.match(LuluParser.Allocate)
                 self.state = 380
@@ -2539,16 +2861,25 @@ class LuluParser ( Parser ):
                 pass
 
             elif la_ == 6:
+                localctx = LuluParser.Expr_funccallContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 381
                 self.func_call()
                 pass
 
             elif la_ == 7:
+                localctx = LuluParser.Expr_variableContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 382
                 self.variable()
                 pass
 
             elif la_ == 8:
+                localctx = LuluParser.Expr_nilContext(self, localctx)
+                self._ctx = localctx
+                _prevctx = localctx
                 self.state = 383
                 self.match(LuluParser.Nil)
                 pass
@@ -2567,7 +2898,7 @@ class LuluParser ( Parser ):
                     self._errHandler.sync(self)
                     la_ = self._interp.adaptivePredict(self._input,46,self._ctx)
                     if la_ == 1:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Multiplicative_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 386
                         if not self.precpred(self._ctx, 15):
@@ -2580,7 +2911,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 2:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Sumsub_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 389
                         if not self.precpred(self._ctx, 14):
@@ -2598,7 +2929,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 3:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Relational_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 392
                         if not self.precpred(self._ctx, 13):
@@ -2611,7 +2942,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 4:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Eqaulity_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 395
                         if not self.precpred(self._ctx, 12):
@@ -2624,7 +2955,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 5:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Bitwise_and_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 398
                         if not self.precpred(self._ctx, 11):
@@ -2637,7 +2968,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 6:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Bitwise_inclusive_or_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 401
                         if not self.precpred(self._ctx, 10):
@@ -2650,7 +2981,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 7:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Logical_and_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 404
                         if not self.precpred(self._ctx, 9):
@@ -2663,7 +2994,7 @@ class LuluParser ( Parser ):
                         pass
 
                     elif la_ == 8:
-                        localctx = LuluParser.ExprContext(self, _parentctx, _parentState)
+                        localctx = LuluParser.Logical_or_opContext(self, LuluParser.ExprContext(self, _parentctx, _parentState))
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
                         self.state = 407
                         if not self.precpred(self._ctx, 8):
@@ -2675,7 +3006,7 @@ class LuluParser ( Parser ):
                         self.expr(9)
                         pass
 
-             
+
                 self.state = 414
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input,47,self._ctx)
@@ -2797,45 +3128,45 @@ class LuluParser ( Parser ):
     def dcl_args_sempred(self, localctx:Dcl_argsContext, predIndex:int):
             if predIndex == 0:
                 return self.precpred(self._ctx, 1)
-         
+
 
     def func_def_args_sempred(self, localctx:Func_def_argsContext, predIndex:int):
             if predIndex == 1:
                 return self.precpred(self._ctx, 1)
-         
+
 
     def expr_sempred(self, localctx:ExprContext, predIndex:int):
             if predIndex == 2:
                 return self.precpred(self._ctx, 15)
-         
+
 
             if predIndex == 3:
                 return self.precpred(self._ctx, 14)
-         
+
 
             if predIndex == 4:
                 return self.precpred(self._ctx, 13)
-         
+
 
             if predIndex == 5:
                 return self.precpred(self._ctx, 12)
-         
+
 
             if predIndex == 6:
                 return self.precpred(self._ctx, 11)
-         
+
 
             if predIndex == 7:
                 return self.precpred(self._ctx, 10)
-         
+
 
             if predIndex == 8:
                 return self.precpred(self._ctx, 9)
-         
+
 
             if predIndex == 9:
                 return self.precpred(self._ctx, 8)
-         
+
 
 
 
