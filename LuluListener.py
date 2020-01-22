@@ -16,7 +16,7 @@ else:
 
         52: "Bool_const",
         53: "Int_const",
-        54: "Real_const",
+        54: "Float",
         56: "String_const",
         57: "Identifiers"
 
@@ -223,6 +223,10 @@ else:
         def check_type_assigment(l_type, r_type):
             if "_" in r_type:
                 r_type = r_type.split('_')[0]
+                if r_type == 'Real' :
+                    r_type ='Float';
+
+
             if l_type == 'Int':
                 if r_type in "Int Bool Identifiers":
                     return True
@@ -232,7 +236,7 @@ else:
                     return True
                 return False
             elif l_type == 'Float':
-                if r_type in 'Float Real Int':
+                if r_type in 'Float Int':
                     return True
                 return False
             elif l_type == 'String':
@@ -243,22 +247,117 @@ else:
                 pass
 
         @staticmethod
-        def check_type_conversion(type1, type2):
+        def check_type_conversion(operator,type1, type2 = None):
+
             if "_" in type1:
                 type1 = type1.split('_')[0]
-            if "_" in type2:
+                if type1 == 'Real':
+                    type1 == 'Float'
+            if type2!=None and "_" in type2:
                 type2 = type2.split('_')[0]
+                if type2 == 'Real' :
+                    type2 ='Float'
 
-            if (type1 == "Bool" and type2 == 'Int') or (type1 == 'Int' and type2 == 'Bool'):
-                return True
-            elif (type1 == "Int" and type2 == 'Float') or (type1 == 'Float' and type2 == 'Int'):
-                return True
-            elif (type1 == "Int" and type2 == 'String') or (type1 == 'String' and type2 == 'Int'):
-                return True
-            elif (type1 == "Int" and type2 == 'Identifiers') or (type1 == 'Identifiers' and type2 == 'Int'):
-                return True
-            else:
-                return False
+
+            if operator == '+' or operator =='-' or operator =='*' or operator == '/' or operator== '%':
+
+                if (type1=='Int' and type2=='Int') :
+                    return 'Int'
+                elif (type1=='Float' and type2=='Float') :
+                    return 'Float'
+                elif (type1=='String' and type2=='String') :
+                    return 'String'
+                elif (type1=='Bool' and type2=='Bool') :
+                    return 'Int'
+                elif (type1 == "Bool" and type2 == 'Int') or (type1 == 'Int' and type2 == 'Bool'):
+                    return 'Int'
+                elif (type1 == "Int" and type2 == 'Float') or (type1 == 'Float' and type2 == 'Int'):
+                    return 'Float'
+                elif (type1 == "Int" and type2 == 'String') or (type1 == 'String' and type2 == 'Int'):
+                    return 'String'
+                elif (type1 == "Bool" and type2 == 'String') or (type1 == 'String' and type2 == 'Bool'):
+                    return 'String'
+                elif (type1 == "Bool" and type2 == 'Float') or (type1 == 'Float' and type2 == 'Bool'):
+                    return 'Float'
+                elif (type1 == 'Float'  ) and type2 ==None :
+                    return 'Float'
+                elif (type1 == 'Int' or type1 == 'Bool') and type2 ==None:
+                    return 'Int'
+                else:
+                    return None
+
+
+
+            elif operator =='>=' or operator =='<=' or operator == '<' or operator =='>' or operator =='==' or operator =='!=' :
+
+                if type1 == 'Int' and type2 =='Int' :
+                    return 'Bool'
+                elif type1 == 'Float' and type2 =='Float' :
+                    return 'Bool'
+                elif type1 == 'String' and type2 =='String' :
+                    return 'Bool'
+                elif type1 == 'Bool' and type2 =='Bool' :
+                    return 'Bool'
+                elif (type1 == "Bool" and type2 == 'Int') or (type1 == 'Int' and type2 == 'Bool'):
+                    return 'Bool'
+                elif (type1 == "Int" and type2 == 'Float') or (type1 == 'Float' and type2 == 'Int'):
+                    return 'Bool'
+                elif (type1 == "Int" and type2 == 'String') or (type1 == 'String' and type2 == 'Int'):
+                    return 'Bool'
+                elif (type1 == "Bool" and type2 == 'String') or (type1 == 'String' and type2 == 'Bool'):
+                    return 'Bool'
+                elif (type1 == "Bool" and type2 == 'Float') or (type1 == 'String' and type2 == 'Float'):
+                    return 'Bool'
+                else:
+                    return None
+
+
+
+            elif operator == '||' or operator =='&&' or operator == '!':
+
+                if(type1 == 'Int' and type2 == 'Int'):
+                    return 'Bool'
+                elif(type1 == 'Bool' and type2 == 'Bool'):
+                    return 'Bool'
+                elif(type1 == 'Identifiers' and type2 == 'Identifiers'):
+                    return 'Bool'
+                elif (type1 == 'Bool' and type2 == 'Int') or (type1 =='Int' and type2 =='Bool') :
+                    return 'Bool'
+                elif (type1 == 'Bool' and type2 == 'Identifiers') or (type1 =='Identifiers' and type2 =='Bool') :
+                    return 'Bool'
+                elif (type1 =='Bool' or type1=='Int' or type1=='Identifiers' ) and type2 == None :
+                    return 'Bool'
+                else:
+                    return None
+
+
+            elif operator =='|' or operator =='&' or operator =='~' :
+
+                if (type1 == 'Int' and type2 =='Int'):
+                    return 'Int'
+                elif (type1 == 'Bool' and type2 =='Bool'):
+                    return 'Int'
+                elif (type1 == 'Identifiers' and type2 =='Identifiers'):
+                    return 'Int'
+                elif (type1 == 'Bool' or type1 =='Int' or type1 == 'Identifiers') and type2 ==None :
+                    return 'Int'
+                elif (type1  == 'Bool' and type2=='Int' ) or (type1 == 'Int' and type2=='Int') :
+                    return 'int'
+                elif (type1 == 'Identifiers' and type2 =='Int') or (type1 == 'Int' and type2=='Identifiers') :
+                    return 'Int'
+                else:
+                    return None
+
+
+
+
+
+
+
+
+
+
+
 
 
     class ArrayEntity(Entity):
@@ -330,51 +429,52 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
+        pass
 
 
 
-        root_scope=self.__programStack.top()
-        for i in range(len(ctx.fst_def())):
-
-            '''check type definition'''
-            if Rule_Dic[ctx.fst_def(i).getChild(0).getRuleIndex()]=="type_def":
-                '''ud_class_name : user defined class name'''
-                ud_class_name = (ctx.fst_def(i).getChild(0).Identifiers(0).getText())
-                if root_scope.search_class_in_mainctx(ud_class_name) != None :
-                    print("Double declaration of type '",ud_class_name, "'")
-                    exit()
-                else:
-                    newClass=ClassEntity("class")
-                    newClass.set_entity_name(ud_class_name)
-                    root_scope.add_to_main_context(newClass)
-
-            else:
-
-
-                '''it is a func_def rule '''
-
-
-                func_name=(ctx.fst_def(i).getChild(0).Identifiers().getText())
-
-                output_params=ctx.fst_def(i).getChild(0).func_def_args()[0].getText()
-
-                input_params=(ctx.fst_def(i).getChild(0).func_def_args()[1]).getText()
-
-
-                if root_scope.search_func_in_mainctx((func_name,input_params,output_params))!=None:
-                    print("Double declaration of functions")
-                    exit()
-
-                #TODO Find a better way to handle input and output parameters
-                newFunction=FunctionEntity("function")
-
-                newFunction.set_input_params(input_params)
-                newFunction.set_output_params(output_params)
-                newFunction.set_entity_name(func_name)
-
-
-                root_scope.add_to_main_context(newFunction)
-
+        # root_scope=self.__programStack.top()
+        # for i in range(len(ctx.fst_def())):
+        #
+        #     '''check type definition'''
+        #     if Rule_Dic[ctx.fst_def(i).getChild(0).getRuleIndex()]=="type_def":
+        #         '''ud_class_name : user defined class name'''
+        #         ud_class_name = (ctx.fst_def(i).getChild(0).Identifiers(0).getText())
+        #         if root_scope.search_class_in_mainctx(ud_class_name) != None :
+        #             print("Double declaration of type '",ud_class_name, "'")
+        #             exit()
+        #         else:
+        #             newClass=ClassEntity("class")
+        #             newClass.set_entity_name(ud_class_name)
+        #             root_scope.add_to_main_context(newClass)
+        #
+        #     else:
+        #
+        #
+        #         '''it is a func_def rule '''
+        #
+        #
+        #         func_name=(ctx.fst_def(i).getChild(0).Identifiers().getText())
+        #
+        #         output_params=ctx.fst_def(i).getChild(0).func_def_args()[0].getText()
+        #
+        #         input_params=(ctx.fst_def(i).getChild(0).func_def_args()[1]).getText()
+        #
+        #
+        #         if root_scope.search_func_in_mainctx((func_name,input_params,output_params))!=None:
+        #             print("Double declaration of functions")
+        #             exit()
+        #
+        #         #TODO Find a better way to handle input and output parameters
+        #         newFunction=FunctionEntity("function")
+        #
+        #         newFunction.set_input_params(input_params)
+        #         newFunction.set_output_params(output_params)
+        #         newFunction.set_entity_name(func_name)
+        #
+        #
+        #         root_scope.add_to_main_context(newFunction)
+        #
 
 
 
@@ -730,6 +830,18 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#Logical_or_op.
     def enterLogical_or_op(self, ctx: LuluParser.Logical_or_opContext):
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
+
+
+        final_type = VariableEntity.check_type_conversion(operator , l_operand_type , r_operand_type)
+
+        if final_type != None :
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            exit()
         pass
 
     # Exit a parse tree produced by LuluParser#Logical_or_op.
@@ -745,23 +857,37 @@ class LuluListener(ParseTreeListener):
     def exitSumsub_op(self, ctx: LuluParser.Sumsub_opContext):
         r_operand_type = self.__typeStack.pop()
         l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
 
-        if VariableEntity.check_type_conversion(l_operand_type, r_operand_type):
 
-            if r_operand_type == 'Int':
-                pass
+        final_type = VariableEntity.check_type_conversion(operator , l_operand_type , r_operand_type)
+
+        if final_type != None :
+            self.__typeStack.push(final_type)
         else:
-            print('rideyi dada type e jamet doros nis')
+            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
             exit()
 
     # Enter a parse tree produced by LuluParser#Unaryop.
     def enterUnaryop(self, ctx: LuluParser.UnaryopContext):
+
         pass
 
     # Exit a parse tree produced by LuluParser#Unaryop.
     def exitUnaryop(self, ctx: LuluParser.UnaryopContext):
-        # print(ctx.type)
-        pass
+
+        u_operand = self.__typeStack.pop()
+
+        operator = ctx.getChild(0).getText()
+
+        final_type = VariableEntity.check_type_conversion(operator, u_operand)
+
+        if final_type != None:
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ',operator , ' can not operate ', u_operand)
+            exit()
+
 
     # Enter a parse tree produced by LuluParser#expr_variable.
     def enterExpr_variable(self, ctx: LuluParser.Expr_variableContext):
@@ -804,6 +930,18 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Logical_and_op.
     def exitLogical_and_op(self, ctx: LuluParser.Logical_and_opContext):
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
+
+
+        final_type = VariableEntity.check_type_conversion(operator , l_operand_type , r_operand_type)
+
+        if final_type != None :
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            exit()
         pass
 
     # Enter a parse tree produced by LuluParser#expr_paranthensis.
@@ -854,6 +992,20 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Multiplicative_op.
     def exitMultiplicative_op(self, ctx: LuluParser.Multiplicative_opContext):
+
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator= ctx.getChild(1).getText()
+
+        final_type = VariableEntity.check_type_conversion(operator, l_operand_type, r_operand_type)
+
+        if final_type != None:
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ', operator, ' can not operate ', l_operand_type, ' and ', r_operand_type)
+            exit()
+
+
         pass
 
     # Enter a parse tree produced by LuluParser#Eqaulity_op.
@@ -862,6 +1014,18 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Eqaulity_op.
     def exitEqaulity_op(self, ctx: LuluParser.Eqaulity_opContext):
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
+
+        final_type = VariableEntity.check_type_conversion(operator, l_operand_type, r_operand_type)
+
+        if final_type != None:
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ', operator, ' can not operate ', l_operand_type, ' and ', r_operand_type)
+
+            exit()
         pass
 
     # Enter a parse tree produced by LuluParser#expr_nil.
@@ -874,10 +1038,23 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#Relational_op.
     def enterRelational_op(self, ctx: LuluParser.Relational_opContext):
-        pass
 
-    # Exit a parse tree produced by LuluParser#Relational_op.
+        pass
+        # Exit a parse tree produced by LuluParser#Relational_op.
     def exitRelational_op(self, ctx: LuluParser.Relational_opContext):
+
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
+
+        final_type = VariableEntity.check_type_conversion(operator, l_operand_type, r_operand_type)
+
+        if final_type != None:
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ', operator, ' can not operate ', l_operand_type, ' and ', r_operand_type)
+
+            exit()
         pass
 
     # Enter a parse tree produced by LuluParser#Bitwise_inclusive_or_op.
@@ -886,6 +1063,18 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Bitwise_inclusive_or_op.
     def exitBitwise_inclusive_or_op(self, ctx: LuluParser.Bitwise_inclusive_or_opContext):
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
+
+
+        final_type = VariableEntity.check_type_conversion(operator , l_operand_type , r_operand_type)
+
+        if final_type != None :
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            exit()
         pass
 
     # Enter a parse tree produced by LuluParser#Bitwise_and_op.
@@ -894,6 +1083,18 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Bitwise_and_op.
     def exitBitwise_and_op(self, ctx: LuluParser.Bitwise_and_opContext):
+        r_operand_type = self.__typeStack.pop()
+        l_operand_type = self.__typeStack.pop()
+        operator = ctx.getChild(1).getText()
+
+
+        final_type = VariableEntity.check_type_conversion(operator , l_operand_type , r_operand_type)
+
+        if final_type != None :
+            self.__typeStack.push(final_type)
+        else:
+            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            exit()
         pass
 
     # Enter a parse tree produced by LuluParser#array.
