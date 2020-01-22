@@ -1,0 +1,97 @@
+ def future_look(self,l):
+
+
+            inputpar = str()
+            outputpar = str()
+
+            if len(l) == 2:
+                result=(self.__programStack.top()).search_func_in_mainctx((l[-1], None, None))
+                if result ==None:
+                    newFunction = FunctionEntity("function")
+
+                    newFunction.set_input_params(None)
+                    newFunction.set_output_params(None)
+                    newFunction.set_entity_name(l[-1])
+
+                    self.__programStack.top().add_to_main_context(newFunction)
+
+                else:
+                    print("Double definition of functions")
+                    exit()
+
+
+            elif l[-2].startswith("function"):
+                x = (l[-2][:l[-2].index("{")])
+                q = (x.split(","))
+                for i in range(l.index("&&")):
+                    inputpar += l[i] + str(q[i].count("[]"))
+                result = (self.__programStack.top()).search_func_in_mainctx((l[-1], inputpar, None))
+                if result == None:
+                    newFunction = FunctionEntity("function")
+
+                    newFunction.set_input_params(inputpar)
+                    newFunction.set_output_params(None)
+                    newFunction.set_entity_name(l[-1])
+
+                    self.__programStack.top().add_to_main_context(newFunction)
+
+                else:
+                    print("Double definition of functions")
+                    exit()
+
+
+            else:
+                x = (l[-2][:l[-2].index("{")])
+                q = (x.split("=")[0].split(","))
+                q1 = (x.split("=")[1].split(","))
+                for i in range(l.index("&&")):
+                    inputpar += l[i] + str(q[i].count("[]"))
+
+                for i in range(l.index("&&") + 1, len(l) - 3):
+                    outputpar += l[i] + str(q1[i - l.index(("&&")) - 1].count("[]"))
+
+                if "()" in x:
+                    return (l[-1], None, inputpar)
+
+                result = (self.__programStack.top()).search_func_in_mainctx((l[-1], inputpar, outputpar))
+                if result == None:
+                    newFunction = FunctionEntity("function")
+
+                    newFunction.set_input_params(inputpar)
+                    newFunction.set_output_params(outputpar)
+                    newFunction.set_entity_name(l[-1])
+
+                    self.__programStack.top().add_to_main_context(newFunction)
+
+                else:
+                    print("Double definition of functions")
+                    exit()
+
+
+
+-------------------------------------------------
+
+
+
+    def enterProgram(self, ctx: LuluParser.ProgramContext):
+
+
+
+        root_scope=self.__programStack.top()
+        for i in range(len(ctx.fst_def())):
+
+            '''check type definition'''
+            if Rule_Dic[ctx.fst_def(i).getChild(0).getRuleIndex()]=="type_def":
+                '''ud_class_name : user defined class name'''
+                ud_class_name = (ctx.fst_def(i).getChild(0).Identifiers(0).getText())
+                if root_scope.search_class_in_mainctx(ud_class_name) != None :
+                    print("Double declaration of type '",ud_class_name, "'")
+                    exit()
+                else:
+                    newClass=ClassEntity("class")
+                    newClass.set_entity_name(ud_class_name)
+                    root_scope.add_to_main_context(newClass)
+
+
+
+
