@@ -109,6 +109,9 @@ else:
 
             return None
 
+        def get_mainctx(self):
+            return self.__mainctx
+
 
         def is_exist_entity(self, entity_name):  ##TODO Impelemnet this again
             for entity in self.__declareSt:
@@ -225,6 +228,7 @@ else:
                 r_type = r_type.split('_')[0]
                 if r_type == 'Real' :
                     r_type ='Float';
+
 
 
             if l_type == 'Int':
@@ -427,64 +431,96 @@ class LuluListener(ParseTreeListener):
 
         self.__programStack.push(root_scope)
 
+    def future_look(self, l):
+
+        inputpar = str()
+        outputpar = str()
+
+        if len(l) == 2:
+            result = (self.__programStack.top()).search_func_in_mainctx((l[-1], None, None))
+            if result == None:
+                newFunction = FunctionEntity("function")
+
+                newFunction.set_input_params(None)
+                newFunction.set_output_params(None)
+                newFunction.set_entity_name(l[-1])
+
+                self.__programStack.top().add_to_main_context(newFunction)
+
+            else:
+                open("./prg_functions", 'w').close()
+                print("Double definition of function " + l[-1])
+                exit()
+
+
+        elif l[-2].startswith("function"):
+            x = (l[-2][:l[-2].index("{")])
+            q = (x.split(","))
+            for i in range(l.index("&&")):
+                inputpar += l[i] + str(q[i].count("[]"))
+            result = (self.__programStack.top()).search_func_in_mainctx((l[-1], inputpar, None))
+            if result == None:
+                newFunction = FunctionEntity("function")
+
+                newFunction.set_input_params(inputpar)
+                newFunction.set_output_params(None)
+                newFunction.set_entity_name(l[-1])
+
+                self.__programStack.top().add_to_main_context(newFunction)
+
+            else:
+                open("./prg_functions", 'w').close()
+                print("Double definition of function " + l[-1])
+                exit()
+
+
+        else:
+            x = (l[-2][:l[-2].index("{")])
+            q = (x.split("=")[0].split(","))
+            q1 = (x.split("=")[1].split(","))
+            for i in range(l.index("&&")):
+                inputpar += l[i] + str(q[i].count("[]"))
+
+            for i in range(l.index("&&") + 1, len(l) - 3):
+                outputpar += l[i] + str(q1[i - l.index(("&&")) - 1].count("[]"))
+
+            if "()" in x:
+                return (l[-1], None, inputpar)
+
+            result = (self.__programStack.top()).search_func_in_mainctx((l[-1], inputpar, outputpar))
+            if result == None:
+                newFunction = FunctionEntity("function")
+
+                newFunction.set_input_params(inputpar)
+                newFunction.set_output_params(outputpar)
+                newFunction.set_entity_name(l[-1])
+
+                self.__programStack.top().add_to_main_context(newFunction)
+
+            else:
+                open("./prg_functions", 'w').close()
+                print("Double definition of function " + l[-1])
+                exit()
+
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
-        pass
 
 
 
-        # root_scope=self.__programStack.top()
-        # for i in range(len(ctx.fst_def())):
-        #
-        #     '''check type definition'''
-        #     if Rule_Dic[ctx.fst_def(i).getChild(0).getRuleIndex()]=="type_def":
-        #         '''ud_class_name : user defined class name'''
-        #         ud_class_name = (ctx.fst_def(i).getChild(0).Identifiers(0).getText())
-        #         if root_scope.search_class_in_mainctx(ud_class_name) != None :
-        #             print("Double declaration of type '",ud_class_name, "'")
-        #             exit()
-        #         else:
-        #             newClass=ClassEntity("class")
-        #             newClass.set_entity_name(ud_class_name)
-        #             root_scope.add_to_main_context(newClass)
-        #
-        #     else:
-        #
-        #
-        #         '''it is a func_def rule '''
-        #
-        #
-        #         func_name=(ctx.fst_def(i).getChild(0).Identifiers().getText())
-        #
-        #         output_params=ctx.fst_def(i).getChild(0).func_def_args()[0].getText()
-        #
-        #         input_params=(ctx.fst_def(i).getChild(0).func_def_args()[1]).getText()
-        #
-        #
-        #         if root_scope.search_func_in_mainctx((func_name,input_params,output_params))!=None:
-        #             print("Double declaration of functions")
-        #             exit()
-        #
-        #         #TODO Find a better way to handle input and output parameters
-        #         newFunction=FunctionEntity("function")
-        #
-        #         newFunction.set_input_params(input_params)
-        #         newFunction.set_output_params(output_params)
-        #         newFunction.set_entity_name(func_name)
-        #
-        #
-        #         root_scope.add_to_main_context(newFunction)
-        #
+        root_scope=self.__programStack.top()
+        for i in range(len(ctx.fst_def())):
 
-
-
-        #
-        # for i in range(1, program_node_child_count):
-        #     if ctx.parentCtx.parentCtx.getChild(i).getChild(0).getRuleIndex() == 18:
-        #         func_def_ctx = ctx.parentCtx.parentCtx.getChild(i).getChild(0)
-        #         print(func_def_ctx.Identifiers())
-
-
+            '''check type definition'''
+            if Rule_Dic[ctx.fst_def(i).getChild(0).getRuleIndex()]=="type_def":
+                '''ud_class_name : user defined class name'''
+                ud_class_name = (ctx.fst_def(i).getChild(0).Identifiers(0).getText())
+                if root_scope.search_class_in_mainctx(ud_class_name) != None :
+                    print("Double declaration of type '",ud_class_name, "'")
+                    exit()
+                else:
+                    newClass=ClassEntity("class")
+                    newClass.set_entity_name(ud_class_name)
+                    root_scope.add_to_main_context(newClass)
 
     # Exit a parse tree produced by LuluParser#program.
     def exitProgram(self, ctx: LuluParser.ProgramContext):
@@ -810,8 +846,25 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#variable.
     def exitVariable(self, ctx: LuluParser.VariableContext):
+        variable_name = ctx..ref(0).Identifiers().getText()
 
-        pass
+        current_scope = self.__programStack.top()
+
+        if current_scope.get_scope_type() == "root":
+            search_st_result = current_scope.search_var_in_dclst(variable_name)
+        else:
+            search_st_result = current_scope.search_var_in_st(variable_name)
+
+        if search_st_result == None:
+            print("variable " + variable_name + " Is not declared in this scope")
+            exit()
+        else:
+            self.__typeStack.push(search_st_result)
+
+
+
+
+
 
     # Enter a parse tree produced by LuluParser#ref.
     def enterRef(self, ctx: LuluParser.RefContext):
@@ -896,21 +949,8 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#expr_variable.
     def exitExpr_variable(self, ctx: LuluParser.Expr_variableContext):
+        pass
 
-        variable_name = ctx.variable().ref(0).Identifiers().getText()
-
-        current_scope = self.__programStack.top()
-
-        if current_scope.get_scope_type() == "root":
-            search_st_result = current_scope.search_var_in_dclst(variable_name)
-        else:
-            search_st_result = current_scope.search_var_in_st(variable_name)
-
-        if search_st_result == None:
-            print("variable " + variable_name + " Is not declared in this scope")
-            exit()
-        else:
-            self.__typeStack.push(search_st_result)
 
     # Enter a parse tree produced by LuluParser#expr_funccall.
     def enterExpr_funccall(self, ctx: LuluParser.Expr_funccallContext):
@@ -1111,8 +1151,8 @@ class LuluListener(ParseTreeListener):
             arr_ele_type = self.__typeStack.pop()
 
             ## TODO it seemes we dont need type convesion func for this case
+            if not VariableEntity.check_type_assigment(self.__arrayType , arr_ele_type) :
 
-            if arr_ele_type != self.__arrayType and arr_ele_type.split("_")[0] != self.__arrayType:
                 # TODO Check if this way is a good way when we have funccall
 
                 '''
