@@ -895,15 +895,10 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#loop_stmt.
     def exitLoop_stmt(self, ctx: LuluParser.Loop_stmtContext):
-        # if ctx.getChild(0).getText() == 'while' :
-        #     if not self.__typeStack.pop() == 'Bool' :
-        #         print ('while condition should be a Bool type cond')
-        # if ctx.getChild(0).getText() =='for' :
-
-
-
-
-        pass
+        if ctx.data_type() != None :
+            variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
+            self.__typeStack.push(variable_type)
+            print('tu for ' , variable_type , 'add shod')
 
     # Enter a parse tree produced by LuluParser#data_type.
     def enterData_type(self, ctx: LuluParser.Data_typeContext):
@@ -920,6 +915,10 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#assign.
     def exitAssign(self, ctx: LuluParser.AssignContext):
+
+        if Rule_Dic[ctx.parentCtx.getRuleIndex()] == 'loop_stmt' :
+            ''' so this condition is for for statement var def'''
+            print('this is assigment for loop')
 
 
         if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()]  == 'array' :
