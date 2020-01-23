@@ -6,6 +6,9 @@ from typing import TextIO
 import sys
 
 
+func_def_recognizer=0
+func_dcl_recognizer=0
+
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3>")
@@ -394,6 +397,8 @@ class LuluParser ( Parser ):
 
 
     def program(self):
+        global func_def_recognizer
+        global func_dcl_recognizer
 
         localctx = LuluParser.ProgramContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_program)
@@ -955,6 +960,8 @@ class LuluParser ( Parser ):
 
 
     def func_dcl(self):
+        global func_dcl_recognizer
+        func_dcl_recognizer=1
 
         localctx = LuluParser.Func_dclContext(self, self._ctx, self.state)
         self.enterRule(localctx, 14, self.RULE_func_dcl)
@@ -1000,6 +1007,7 @@ class LuluParser ( Parser ):
             self._errHandler.reportError(self, re)
             self._errHandler.recover(self, re)
         finally:
+            func_dcl_recognizer=0
             self.exitRule()
         return localctx
 
@@ -1171,7 +1179,8 @@ class LuluParser ( Parser ):
 
 
     def fst_def(self):
-
+        global func_def_recognizer
+        global func_dcl_recognizer
         localctx = LuluParser.Fst_defContext(self, self._ctx, self.state)
         self.enterRule(localctx, 20, self.RULE_fst_def)
         try:
@@ -1186,6 +1195,7 @@ class LuluParser ( Parser ):
             elif token in [LuluParser.T__7, LuluParser.Function]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 174
+
                 self.func_def()
                 pass
             else:
@@ -1237,8 +1247,9 @@ class LuluParser ( Parser ):
 
 
     def type_def(self):
-
+        global func_def_recognizer
         localctx = LuluParser.Type_defContext(self, self._ctx, self.state)
+        func_def_recognizer=1
         self.enterRule(localctx, 22, self.RULE_type_def)
         self._la = 0 # Token type
         try:
@@ -1278,7 +1289,9 @@ class LuluParser ( Parser ):
             self._errHandler.reportError(self, re)
             self._errHandler.recover(self, re)
         finally:
+
             self.exitRule()
+        func_def_recognizer=0
         return localctx
 
 
@@ -1647,6 +1660,8 @@ class LuluParser ( Parser ):
 
 
     def func_def_args(self, _p:int=0):
+        global func_def_recognizer
+        global func_dcl_recognizer
         _parentctx = self._ctx
         _parentState = self.state
         localctx = LuluParser.Func_def_argsContext(self, self._ctx, _parentState)
@@ -1716,9 +1731,10 @@ class LuluParser ( Parser ):
             self._errHandler.recover(self, re)
         finally:
             self.unrollRecursionContexts(_parentctx)
-        f = open("./prg_functions", 'a')
-        f.writelines("&& ")
-        f.close()
+        if func_def_recognizer==0 and func_dcl_recognizer==0:
+            f = open("./prg_functions", 'a')
+            f.writelines("&& ")
+            f.close()
         return localctx
 
 
@@ -1761,6 +1777,8 @@ class LuluParser ( Parser ):
 
 
     def func_def(self):
+        global  func_def_recognizer
+        global func_dcl_recognizer
         localctx = LuluParser.Func_defContext(self, self._ctx, self.state)
         self.enterRule(localctx, 36, self.RULE_func_def)
         self._la = 0 # Token type
@@ -1806,13 +1824,13 @@ class LuluParser ( Parser ):
         finally:
             self.exitRule()
 
-
         '''just for func-def in program node not "type" node'''
-        #TODO should  i correct children??
-        if localctx.parentCtx.getRuleIndex()==10:
+        # TODO should  i correct children??
+        if localctx.parentCtx.getRuleIndex() == 10 and func_def_recognizer==0 and func_dcl_recognizer==0:
+
             f = open("./prg_functions", 'a')
-            f.writelines(localctx.getRuleContext().getText()+" ")
-            f.writelines(localctx.Identifiers().getText()+" ")
+            f.writelines(localctx.getRuleContext().getText() + " ")
+            f.writelines(localctx.Identifiers().getText() + " ")
             f.writelines("\n")
 
             f.close()
@@ -2186,6 +2204,8 @@ class LuluParser ( Parser ):
 
 
     def data_type(self):
+        global func_def_recognizer
+        global func_dcl_recognizer
 
         localctx = LuluParser.Data_typeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 44, self.RULE_data_type)
@@ -2205,7 +2225,7 @@ class LuluParser ( Parser ):
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
-        if self.state==231 or self.state==243:
+        if (self.state==231 or self.state==243) and func_def_recognizer==0 and func_dcl_recognizer==0:
             f = open("./prg_functions", 'a')
             f.writelines(localctx.getText()+" ")
             f.close()

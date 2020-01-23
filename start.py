@@ -2,7 +2,7 @@ import sys
 from antlr4 import *
 from LuluLexer import LuluLexer
 from LuluParser import LuluParser
-from LuluListener import LuluListener
+from LuluListener_old_st import LuluListener
 
 
 
@@ -19,7 +19,6 @@ def main(argv):
     tree = parser.program()
 
 
-
     compiler_listener= LuluListener()
     compiler_listener.initial_state()
 
@@ -30,10 +29,15 @@ def main(argv):
         (compiler_listener.future_look(line.split(" ")[:-1]))
 
     f.close()
+    open("./prg_functions", 'w').close()
+
+
+
 
 
     walker = ParseTreeWalker()
     walker.walk(compiler_listener, tree)
+
 
 
 if __name__ == '__main__':

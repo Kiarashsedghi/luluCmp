@@ -454,6 +454,8 @@ class LuluListener(ParseTreeListener):
         self.__programStack = Stack()
         self.__typeStack = Stack()
         self.__arrayType = str()
+        self.__func_dcl_ip = str()
+        self.__func_dcl_op = str()
 
     def initial_state(self):
         root_scope = RootScope('root')
@@ -508,13 +510,15 @@ class LuluListener(ParseTreeListener):
             q = (x.split("=")[0].split(","))
             q1 = (x.split("=")[1].split(","))
             for i in range(l.index("&&")):
-                inputpar += l[i] + str(q[i].count("[]"))
+                outputpar += l[i] + str(q[i].count("[]"))
 
             for i in range(l.index("&&") + 1, len(l) - 3):
-                outputpar += l[i] + str(q1[i - l.index(("&&")) - 1].count("[]"))
+                inputpar += l[i] + str(q1[i - l.index(("&&")) - 1].count("[]"))
 
-            if "()" in x:
-                return (l[-1], None, inputpar)
+            if inputpar == '':
+                inputpar = None
+            if outputpar == '':
+                outputpar = None
 
             result = (self.__programStack.top()).search_func_in_mainctx((l[-1], inputpar, outputpar))
             if result == None:
@@ -523,13 +527,13 @@ class LuluListener(ParseTreeListener):
                 newFunction.set_input_params(inputpar)
                 newFunction.set_output_params(outputpar)
                 newFunction.set_entity_name(l[-1])
-
                 self.__programStack.top().add_to_main_context(newFunction)
 
             else:
                 open("./prg_functions", 'w').close()
                 print("Double definition of function " + l[-1])
                 exit()
+
 
     # Enter a parse tree produced by LuluParser#program.
     def enterProgram(self, ctx: LuluParser.ProgramContext):
@@ -732,37 +736,34 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#func_dcl.
     def exitFunc_dcl(self, ctx: LuluParser.Func_dclContext):
-        # ctx.getRuleIndex()
-        #
-        # eqaul_exist = (self.search_node_childrens(ctx, "="))
-        # function_name = ctx.Identifiers().getText()
-        # ip_params = list()
-        # op_params = list()
-        #
-        # if eqaul_exist == -1:
-        #     ip_params = (ctx.dcl_args(0).getText()).split(',')
-        #     op_params = None
-        # else:
-        #     ip_params = (ctx.dcl_args(1).getText()).split(',')
-        #     op_params = (ctx.dcl_args(0).getText()).split(',')
-        #
-        # rscope = self.__programStack.top()
-        # for entity in rscope.get_declare_St():
-        #     if (entity.get_entity_type() == "function") and (entity.get_entity_name() == function_name):
-        #
-        #         if entity.matchsign(ip_params, op_params):
-        #             print("Double Declaration of function")
-        #             exit()
-        #
-        # newfunction = FunctionEntity("function")
-        # newfunction.set_input_params(ip_params)
-        # newfunction.set_output_params(op_params)
-        # newfunction.set_entity_name(function_name)
-        # rscope.add_to_declare_st(newfunction)
-        #
-        # ## add new entity here
-        # pass
-        pass
+        output_params = self.__func_dcl_op
+        input_params = self.__func_dcl_ip
+
+        if ctx.func_def_args() == None:
+            input_params = None
+        if ctx.dcl_args() == None:
+            output_params = None
+
+        root_scope = self.__programStack.top()
+        if root_scope.search_func_in_dclst2((ctx.Identifiers().getText(), input_params, output_params)) != None:
+            print("Multi declaration of function '" + "' " + ctx.Identifiers().getText())
+            exit()
+        else:
+
+            if root_scope.search_func_in_mainctx((ctx.Identifiers().getText(), input_params, output_params)) == None:
+                print("Function declaration has no mathced definition")
+                exit()
+                # TODO showing line number
+
+            newFunction = FunctionEntity("function")
+            newFunction.set_entity_name(ctx.Identifiers().getText())
+            newFunction.set_input_params(input_params)
+            newFunction.set_output_params(output_params)
+            root_scope.add_to_declare_st(newFunction)
+
+            '''for another function declaration we have to reset these variables'''
+            self.__func_dcl_ip = ""
+            self.__func_dcl_op = ""
 
     # Enter a parse tree produced by LuluParser#dcl_args.
     def enterDcl_args(self, ctx: LuluParser.Dcl_argsContext):
@@ -770,7 +771,13 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#dcl_args.
     def exitDcl_args(self, ctx: LuluParser.Dcl_argsContext):
-        pass
+        cnt = 0
+        for i in range(ctx.getChildCount()):
+            if ctx.getChild(i).getText() == "[":
+                cnt += 1
+        self.__func_dcl_op += ctx.data_type().getText() + str(cnt)
+
+
 
     # Enter a parse tree produced by LuluParser#type_dcl.
     def enterType_dcl(self, ctx: LuluParser.Type_dclContext):
@@ -856,7 +863,21 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#func_def_args.
     def exitFunc_def_args(self, ctx: LuluParser.Func_def_argsContext):
-        pass
+        '''Just For function declaration
+                which is always occure when our current scope is root
+                other cases are done in future_look_function     #TODO function input and output should be accessible
+                '''
+        current_scope = self.__programStack.top()
+        if Rule_Dic[ctx.parentCtx.getRuleIndex()] == "func_dcl":
+
+            cnt = 0
+            for i in range(ctx.getChildCount()):
+                if ctx.getChild(i).getText() == "[":
+                    cnt += 1
+
+            self.__func_dcl_ip += ctx.data_type().getText() + str(cnt)
+
+
 
     # Enter a parse tree produced by LuluParser#func_def.
     def enterFunc_def(self, ctx: LuluParser.Func_defContext):
