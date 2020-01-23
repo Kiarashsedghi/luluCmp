@@ -137,6 +137,20 @@ else:
 
             return None
 
+        def search_func_in_dclst2(self, func_signature):
+
+            for entity in self.__declareSt:
+                if entity.get_entity_type() == "function":
+                    # TODO creat get_function_signature
+                    if FunctionEntity.checksignature(func_signature, (
+                    entity.get_entity_name(), entity.get_input_params(), entity.get_output_params())):
+                        return (entity.get_input_params(), entity.get_output_params())
+
+            return None
+
+
+
+
         def get_mainctx(self):
             return self.__mainctx
 
