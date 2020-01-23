@@ -38,7 +38,7 @@ else:
         11: "type_def",
         12 :'component',
         13 :'access_modifier',
-        14 :'func _call',
+        14 :'func_call',
         15 : 'func_handler' ,
         16 :'params',
         17 :'func_def_args',
@@ -94,8 +94,13 @@ else:
         def search_var_in_st(self, var_name):
             for entity in self.__scopeSt:
                 if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
-                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name())
+                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name(),False,None)
+
+                elif entity.get_entity_type() == "array" and entity.get_entity_name() == var_name:
+                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name(),True,entity.get_dimension())
+
             return None
+
 
         def search_func_in_st(self, func_name):
             for entity in self.__scopeSt:
@@ -103,6 +108,21 @@ else:
                     return (entity.get_input_params(), entity.get_output_params())
 
             return None
+
+# NEW
+        def search_fcall_sig_in_st(self, fcall_signature):
+            '''this function will return output signature of all
+            functions which match the fcall signature
+            '''
+
+            list_functions = list()
+            for entity in self.__scopeSt:
+                if entity.get_entity_type() == "function" and \
+                        FunctionEntity.check_fcall_signature(fcall_signature,
+                                                             (entity.get_entity_name(), entity.get_input_params())):
+                    list_functions.append(entity.get_output_params)
+
+            return list_functions
 
         def get_scope_type(self):
             return self.__scopeType
@@ -148,8 +168,35 @@ else:
 
             return None
 
+        # NEW
+        def search_fcall_sig_in_dclst(self, fcall_signature):
+            '''this function will return output signature of all
+            functions which match the fcall signature
+            '''
 
+            list_functions = list()
+            for entity in self.__declareSt:
 
+                if entity.get_entity_type() == "function" and \
+                        FunctionEntity.check_fcall_signature(fcall_signature,
+                                                             (entity.get_entity_name(), entity.get_input_params())):
+                    list_functions.append(entity.get_output_params())
+            return list_functions
+
+        # NEW
+        def search_fcall_sig_in_mainctx(self, fcall_signature):
+            '''this function will return output signature of all
+            functions which match the fcall signature
+            '''
+
+            list_functions = list()
+            for entity in self.__mainctx:
+                if entity.get_entity_type() == "function" and \
+                        FunctionEntity.check_fcall_signature(fcall_signature,
+                                                             (entity.get_entity_name(), entity.get_input_params())):
+                    list_functions.append(entity.get_output_params)
+
+            return list_functions
 
         def get_mainctx(self):
             return self.__mainctx
@@ -164,7 +211,11 @@ else:
         def search_var_in_dclst(self, var_name):
             for entity in self.__declareSt:
                 if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
-                    return (entity.is_const(),entity.get_data_type())
+
+                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), False, None)
+                elif entity.get_entity_type() == "array" and entity.get_entity_name == var_name:
+                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), True, entity.get_dimension())
+
             return None
 
         def search_func_in_dclst(self, func_name):
@@ -177,17 +228,7 @@ else:
         def get_declare_St(self):
             return self.__declareSt
 
-        # def show_me_st(self):
-        #     for entity in self.__declareSt:
-        #         if entity.get_entity_type() == "function":
-        #             print(entity.get_entity_name() + "/" + entity.get_entity_type() + "/")
-        #         elif entity.get_entity_type() == "variable":
-        #             print(
-        #                 entity.get_entity_name() + "/" + entity.get_entity_type() + "/" + entity.get_data_type() + "/" + entity.get_data_value())
-        #         else:
-        #             print(entity.get_entity_name() + "/" + entity.get_entity_type() + "/")
 
-        ##seatch entity
 
 
     class Entity:
@@ -220,6 +261,12 @@ else:
                     return False
             return True
 
+        @staticmethod
+        def check_fcall_signature(signature1, signature2):
+            for i in range(2):
+                if signature1[i].lower() != signature2[i].lower():
+                    return False
+            return True
 
 
 
@@ -298,7 +345,7 @@ else:
             if "_" in type1:
                 type1 = type1.split('_')[0]
                 if type1 == 'Real':
-                    type1 == 'Float'
+                    type1 = 'Float'
             if type2!=None and "_" in type2:
                 type2 = type2.split('_')[0]
                 if type2 == 'Real' :
@@ -458,6 +505,34 @@ else:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # This class defines a complete listener for a parse tree produced by LuluParser.
 
 
@@ -470,6 +545,11 @@ class LuluListener(ParseTreeListener):
         self.__arrayType = str()
         self.__func_dcl_ip = str()
         self.__func_dcl_op = str()
+        self.__func_call_ip = str()
+        '''when we have array in rhs of an assignment and we want types of all elements in array
+        not in form of  [[float],int]
+        '''
+        self.__assign_rhs_array = list()
 
     def initial_state(self):
         root_scope = RootScope('root')
@@ -613,6 +693,8 @@ class LuluListener(ParseTreeListener):
 
             newRegularScope = Scope('regular')
             self.__programStack.push(newRegularScope)
+
+
     def exitBlock(self, ctx: LuluParser.BlockContext):
         self.__programStack.pop()
 
@@ -628,7 +710,7 @@ class LuluListener(ParseTreeListener):
 
 
 
-        pass
+
 
     # Exit a parse tree produced by LuluParser#stmt.
     def exitStmt(self, ctx: LuluParser.StmtContext):
@@ -641,12 +723,13 @@ class LuluListener(ParseTreeListener):
 
 
 
+
         self.__typeStack.push(variable_type)
 
         '''setting array type for future use when we have array'''
         self.__arrayType = variable_type
 
-        pass
+
 
     # Exit a parse tree produced by LuluParser#var_def.
     def exitVar_def(self, ctx: LuluParser.Var_defContext):
@@ -684,8 +767,7 @@ class LuluListener(ParseTreeListener):
             if ctx.expr() != None:
 
 
-                print(self.__typeStack.getStack())
-                exit()
+
 
                 # print(list(ctx.getRuleContext().getText().split("=")[1]))
                 # print(ctx.expr().getChild(0).getRuleIndex())
@@ -779,7 +861,7 @@ class LuluListener(ParseTreeListener):
         else:
 
             if root_scope.search_func_in_mainctx((ctx.Identifiers().getText(), input_params, output_params)) == None:
-                print("Function declaration has no mathced definition")
+                print("Function declaration has no matched definition")
                 exit()
                 # TODO showing line number
 
@@ -883,7 +965,35 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#params.
     def exitParams(self, ctx: LuluParser.ParamsContext):
+
+        if Rule_Dic[ctx.parentCtx.getRuleIndex()]=="func_handler":
+
+            current_scope=self.__programStack.top()
+            f1_s=self.__programStack.pop()
+            roots=self.__programStack.top()
+            self.__programStack.push(f1_s)
+
+            '''searching scopes to find a function with a function call signature
+            function call signature : (f_name, input_parameters)
+            '''
+            searching_result=( roots.search_fcall_sig_in_dclst((ctx.parentCtx.Identifiers().getText(),self.__func_call_ip)))
+
+            '''when no function found'''
+            if len(searching_result)==0 :
+                #TODO implement kiarash idea
+                print("function '" + ctx.parentCtx.Identifiers().getText() + "' is not defined or declared (no signature!)")
+                exit()
+
+            self.__typeStack.push(searching_result)
+
+
+            self.__func_call_ip=""
+
+
+
         pass
+
+
 
     # Enter a parse tree produced by LuluParser#func_def_args.
     def enterFunc_def_args(self, ctx: LuluParser.Func_def_argsContext):
@@ -896,7 +1006,7 @@ class LuluListener(ParseTreeListener):
                 other cases are done in future_look_function     #TODO function input and output should be accessible
                 '''
         current_scope = self.__programStack.top()
-        if Rule_Dic[ctx.parentCtx.getRuleIndex()] == "func_dcl":
+        if current_scope.get_scope_type()=="root":
 
             cnt = 0
             for i in range(ctx.getChildCount()):
@@ -904,6 +1014,7 @@ class LuluListener(ParseTreeListener):
                     cnt += 1
 
             self.__func_dcl_ip += ctx.data_type().getText() + str(cnt)
+
 
 
 
@@ -946,6 +1057,7 @@ class LuluListener(ParseTreeListener):
                 newVariable.set_data_type(variable_type)
                 newVariable.set_entity_name(ctx.assign(0).variable(i).getText())
                 currentScope.add_to_scope_st(newVariable)
+
 
 
     # Exit a parse tree produced by LuluParser#loop_stmt.
@@ -1009,11 +1121,13 @@ class LuluListener(ParseTreeListener):
 
         variable_name = ctx.ref(0).Identifiers().getText()
 
+
         current_scope = self.__programStack.top()
         temp_list = list()
 
         if current_scope.get_scope_type() == "root":
             search_st_result = current_scope.search_var_in_dclst(variable_name)
+
         else:
             search_st_result = current_scope.search_var_in_st(variable_name)
             if search_st_result == None:
