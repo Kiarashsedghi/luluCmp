@@ -1045,11 +1045,11 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#loop_stmt.
     def enterLoop_stmt(self, ctx: LuluParser.Loop_stmtContext):
+        newForScope = Scope('regular')
+        self.__programStack.push(newForScope)
 
         if ctx.data_type() != None :
             variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
-            newForScope = Scope('regular')
-            self.__programStack.push(newForScope)
             currentScope = self.__programStack.top() ## this is for Scope actually
             for i in range(len(ctx.assign(0).variable())):
                 self.__typeStack.push(variable_type)
@@ -1057,6 +1057,7 @@ class LuluListener(ParseTreeListener):
                 newVariable.set_data_type(variable_type)
                 newVariable.set_entity_name(ctx.assign(0).variable(i).getText())
                 currentScope.add_to_scope_st(newVariable)
+
 
 
 
@@ -1122,34 +1123,34 @@ class LuluListener(ParseTreeListener):
         variable_name = ctx.ref(0).Identifiers().getText()
 
 
-        current_scope = self.__programStack.top()
         temp_list = list()
 
-        if current_scope.get_scope_type() == "root":
-            search_st_result = current_scope.search_var_in_dclst(variable_name)
+        # if current_scope.get_scope_type() == "root":
+        #     search_st_result = current_scope.search_var_in_dclst(variable_name)
+        #
+        # else:
+        #     search_st_result = current_scope.search_var_in_st(variable_name)
+        #     print(search_st_result)
 
-        else:
-            search_st_result = current_scope.search_var_in_st(variable_name)
-            if search_st_result == None:
+        search_st_result = None
+        while (len(self.__programStack.getStack()) != 0):
 
-                while (len(self.__programStack.getStack()) != 0):
-
-                    current_scope = self.__programStack.pop()
-                    if current_scope.get_scope_type() == "root":
-                        search_st_result = current_scope.search_var_in_dclst(variable_name)
-                        if search_st_result != None :
-                            temp_list.append(current_scope)
-                            break
-                    else:
-                        search_st_result = current_scope.search_var_in_st(variable_name)
-                        temp_list.append(current_scope)
-                        if search_st_result != None:
-                            break
+            current_scope = self.__programStack.pop()
+            temp_list.append(current_scope)
+            if current_scope.get_scope_type() == "root":
+                search_st_result = current_scope.search_var_in_dclst(variable_name)
+                if search_st_result != None :
+                    # temp_list.append(current_scope)
+                    break
+            else:
+                search_st_result = current_scope.search_var_in_st(variable_name)
+                # temp_list.append(current_scope)
+                if search_st_result != None:
+                    break
 
         if search_st_result == None:
             print("variable " + variable_name + " Is not declared.")
             exit()
-
 
         else:
             for i in range(len(temp_list)-1 , -1 , -1) :
