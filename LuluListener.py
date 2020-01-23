@@ -1,6 +1,6 @@
 # Generated from Lulu.g4 by ANTLR 4.7.2
 from antlr4 import *
-
+import utils as util
 if __name__ is not None and "." in __name__:
     from .LuluParser import LuluParser
 else:
@@ -269,7 +269,7 @@ else:
             if "_" in r_type:
                 r_type = r_type.split('_')[0]
                 if r_type == 'Real' :
-                    r_type ='Float';
+                    r_type ='Float'
 
 
 
@@ -353,7 +353,7 @@ else:
                     return 'Bool'
                 elif (type1 == "Bool" and type2 == 'String') or (type1 == 'String' and type2 == 'Bool'):
                     return 'Bool'
-                elif (type1 == "Bool" and type2 == 'Float') or (type1 == 'String' and type2 == 'Float'):
+                elif (type1 == "Bool" and type2 == 'Float') or (type1 == 'Float' and type2 == 'Bool'):
                     return 'Bool'
                 else:
                     return None
@@ -608,7 +608,9 @@ class LuluListener(ParseTreeListener):
         if Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'func_def' :
             newFuncScope = Scope('function')
             self.__programStack.push(newFuncScope)
-        else:
+
+        elif (Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'loop_stmt' or  Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'cond_stmt') and ctx.parentCtx.getChild(0).getText()!='for':
+
             newRegularScope = Scope('regular')
             self.__programStack.push(newRegularScope)
     def exitBlock(self, ctx: LuluParser.BlockContext):
@@ -616,6 +618,16 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#stmt.
     def enterStmt(self, ctx: LuluParser.StmtContext):
+
+        if ctx.Break() != None :
+            if Rule_Dic [ctx.parentCtx.parentCtx.getRuleIndex()] != 'loop_stmt' :
+                print("'", ctx.Break().getText(), "' use only in loop statement")
+        if ctx.Continue() != None :
+            if Rule_Dic [ctx.parentCtx.parentCtx.getRuleIndex()] != 'loop_stmt' :
+                print("'", ctx.Continue().getText(), "' use only in loop statement")
+
+
+
         pass
 
     # Exit a parse tree produced by LuluParser#stmt.
@@ -663,8 +675,6 @@ class LuluListener(ParseTreeListener):
         if current_scope_type == 'root':
             search_result = current_scope.search_var_in_dclst(var_name)
         else:
-
-
             search_result = current_scope.search_var_in_st(var_name)
 
         if search_result == None:
@@ -672,6 +682,10 @@ class LuluListener(ParseTreeListener):
                 print("const variable " + var_name + "  should be initialized when define")
                 exit()
             if ctx.expr() != None:
+
+
+                print(self.__typeStack.getStack())
+                exit()
 
                 # print(list(ctx.getRuleContext().getText().split("=")[1]))
                 # print(ctx.expr().getChild(0).getRuleIndex())
@@ -908,12 +922,6 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#cond_stmt.
     def exitCond_stmt(self, ctx: LuluParser.Cond_stmtContext):
-        # if ctx.getChild(0).getText() == 'if' :
-        #     if not self.__typeStack.pop() == 'Bool' :
-        #         print ('if expression ' + ctx.expr().getRuleContext().getText() +' should be a Bool type cond')
-        # if ctx.getChild(0).getText() =='switch' :
-        #     if not self.__typeStack.pop() =='Int' :
-        #         print('switch expression ' + ctx.expr().getRuleContext().getText() + ' should be a Int type cond')
         pass
 
     # Enter a parse tree produced by LuluParser#switch_body.
@@ -926,14 +934,23 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#loop_stmt.
     def enterLoop_stmt(self, ctx: LuluParser.Loop_stmtContext):
-        pass
+
+        if ctx.data_type() != None :
+            variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
+            newForScope = Scope('regular')
+            self.__programStack.push(newForScope)
+            currentScope = self.__programStack.top() ## this is for Scope actually
+            for i in range(len(ctx.assign(0).variable())):
+                self.__typeStack.push(variable_type)
+                newVariable = VariableEntity('variable')
+                newVariable.set_data_type(variable_type)
+                newVariable.set_entity_name(ctx.assign(0).variable(i).getText())
+                currentScope.add_to_scope_st(newVariable)
+
 
     # Exit a parse tree produced by LuluParser#loop_stmt.
     def exitLoop_stmt(self, ctx: LuluParser.Loop_stmtContext):
-        if ctx.data_type() != None :
-            variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
-            self.__typeStack.push(variable_type)
-            print('tu for ' , variable_type , 'add shod')
+        pass
 
     # Enter a parse tree produced by LuluParser#data_type.
     def enterData_type(self, ctx: LuluParser.Data_typeContext):
@@ -951,13 +968,18 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#assign.
     def exitAssign(self, ctx: LuluParser.AssignContext):
 
-        if Rule_Dic[ctx.parentCtx.getRuleIndex()] == 'loop_stmt' :
-            ''' so this condition is for for statement var def'''
-            print('this is assigment for loop')
+        # if Rule_Dic[ctx.parentCtx.getRuleIndex()] == 'loop_stmt' :
+        #     ''' so this condition is for for statement var def'''
+        #     print('this is assigment for loop')
 
 
         if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()]  == 'array' :
+
+
             array_elem_types = self.__typeStack.pop()
+            flat_array_elem_types = list()
+            util.flatten(array_elem_types , flat_array_elem_types )
+            array_elem_types = flat_array_elem_types
 
             for i in range(len(ctx.variable())) :
                 lhs_type = self.__typeStack.pop()
@@ -984,27 +1006,48 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#variable.
     def exitVariable(self, ctx: LuluParser.VariableContext):
 
+
         variable_name = ctx.ref(0).Identifiers().getText()
 
         current_scope = self.__programStack.top()
+        temp_list = list()
 
         if current_scope.get_scope_type() == "root":
             search_st_result = current_scope.search_var_in_dclst(variable_name)
         else:
             search_st_result = current_scope.search_var_in_st(variable_name)
+            if search_st_result == None:
+
+                while (len(self.__programStack.getStack()) != 0):
+
+                    current_scope = self.__programStack.pop()
+                    if current_scope.get_scope_type() == "root":
+                        search_st_result = current_scope.search_var_in_dclst(variable_name)
+                        if search_st_result != None :
+                            temp_list.append(current_scope)
+                            break
+                    else:
+                        search_st_result = current_scope.search_var_in_st(variable_name)
+                        temp_list.append(current_scope)
+                        if search_st_result != None:
+                            break
 
         if search_st_result == None:
-            print("variable " + variable_name + " Is not declared in this scope")
+            print("variable " + variable_name + " Is not declared.")
             exit()
+
+
         else:
+            for i in range(len(temp_list)-1 , -1 , -1) :
+                self.__programStack.push(temp_list[i])
 
 
 
-            if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()]=="assign" and search_st_result[1]==True:
-                print("Variable '"+ search_st_result[2] + "' is const and cannot be reassigned")
-                exit()
-            #print(search_st_result[0])
-            self.__typeStack.push(search_st_result[0])
+        if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()]=="assign" and search_st_result[1]==True:
+            print("Variable '"+ search_st_result[2] + "' is const and cannot be reassigned")
+            exit()
+        #print(search_st_result[0])
+        self.__typeStack.push(search_st_result[0])
 
 
 
@@ -1164,8 +1207,8 @@ class LuluListener(ParseTreeListener):
         int x=[12,....];
         '''
 
-        if self.__arrayType != None:
-            self.__typeStack.push(self.__arrayType)
+        # if self.__arrayType != None:
+        #     self.__typeStack.push(self.__arrayType)
 
 
     # Enter a parse tree produced by LuluParser#Allocate_func.
@@ -1236,6 +1279,8 @@ class LuluListener(ParseTreeListener):
 
         r_operand_type = self.__typeStack.pop()
         l_operand_type = self.__typeStack.pop()
+
+
         operator = ctx.getChild(1).getText()
 
         final_type = VariableEntity.check_type_conversion(operator, l_operand_type, r_operand_type)
@@ -1318,21 +1363,24 @@ class LuluListener(ParseTreeListener):
                     # TODO output result
                     print("type " + array_ele_value + " does not match ", self.__arrayType)
                     exit()
+            self.__typeStack.push(self.__arrayType)
+
         else:
-            ''' (a) = [1,2,3,4,5,6] 
-                array elem types are types of 1,2,3,4,5,6
-            '''
+
+
+
+
             array_elem_types = list()
             for i in range(len(ctx.expr())) :
                 array_elem_types.append(self.__typeStack.pop())
-
-
-            """ 
-                why we push list ? 
-                because we want to check each array_elem type in exit assign for each variable 
-                it is not important every array_elem type has same type because they can be converted to a common type 
-            """
             self.__typeStack.push(array_elem_types)
+            """
+                         why we push list ?
+                        because we want to check each array_elem type in exit assign for each variable
+                                it is not important every array_elem type has same type because they can be converted to a common type
+                """
+
+
 
 
 
