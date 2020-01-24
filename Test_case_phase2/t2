@@ -1,0 +1,59 @@
+declare {
+    int a;
+    int t;
+    int u;
+    float ff;
+
+
+}
+
+type  jj {
+    public int t;
+    int  kk;
+}
+
+
+type template : jj {
+
+        string q = super.kk;
+        float y;
+}
+type uauguaguu : template {
+
+        string ff;
+        private const float q=super.y;
+        (int q , float x) = function lion (){
+            int y;
+            for super.q=7 ; 9>0 ; y=y+3 {
+
+                if (super.q) {
+
+                        ff=2.6;
+                        while (a>this.ff){
+
+                            y=999.9;
+
+                        }
+                   }
+                super.q=t+1;
+            }
+            if (y==7) {
+                int q;
+
+                super.q= ff ;
+                y=u;
+
+            }
+
+        }
+}
+
+
+
+
+
+
+
+
+
+
