@@ -71,6 +71,10 @@ else:
             temp = self.__Container.pop()
             self.__Container.append(temp)
             return temp
+        def is_empty(self):
+            if len(self.__Container)==0:
+                return True
+            return False
 
         def length(self):
             return len(self.__Container)
@@ -230,6 +234,16 @@ else:
         def get_declare_St(self):
             return self.__declareSt
 
+        def set_class_entity_is_defined (self , class_name ) :
+            for entity in self.__mainctx:
+                if entity.get_entity_type() =='class' and  entity.get_entity_name() == class_name:
+                    entity.set_is_defined ()
+
+
+
+        def set_func_entity_is_defined (self , func_signature) :
+            pass
+
 
 
 
@@ -363,6 +377,14 @@ else:
                 type2 = type2.split('_')[0]
                 if type2 == 'Real' :
                     type2 ='Float'
+
+
+            if type1 not in "Bool Float Int String" :
+                type1 = 'Identifiers'
+            if type2!=None and type2 not in "Bool Float Int String":
+                    type2 = 'Identifiers'
+
+
 
 
 
@@ -510,7 +532,7 @@ else:
             return self.__isdefined
 
         def set_is_defined(self):
-            return self.__isdefined
+            self.__isdefined = True
 
 
 
@@ -804,10 +826,18 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#var_def.
     def enterVar_def(self, ctx: LuluParser.Var_defContext):
+
+
+
         variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
 
+        '''
+            for preventing rewriting type conversion Functions for lowerCase and uppercase
+            
+        '''
 
-
+        if variable_type == 'Identifiers' :
+            variable_type = ctx.data_type().getChild(0).getText()
 
 
         self.__typeStack.push(variable_type)
@@ -828,7 +858,53 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#var_val.
     def enterVar_val(self, ctx: LuluParser.Var_valContext):
-        pass
+
+        ''' for identifiers'''
+
+        var_type = self.__typeStack.top()
+        if ctx.parentCtx.data_type().Identifiers() :
+            temp_stack = Stack()
+            while True :
+                current_scope = self.__programStack.top()
+                if current_scope.get_scope_type() !='root':
+
+                    temp_stack.push(self.__programStack.pop())
+                else:
+                    break
+            is_exit_mainctx=0
+            for entity in current_scope.get_mainctx():
+                if entity.is_defined() and entity.get_entity_name()==var_type and entity.get_entity_type()=="class":
+                    is_exit_mainctx=1
+                    break
+            if is_exit_mainctx==0:
+                is_exist_declarest=0
+                for entity in current_scope.get_declare_St() :
+                    if entity.get_entity_name()==var_type and entity.get_entity_type()=="class":
+                        is_exist_declarest=1
+                        break
+                is_exist_define_not_declare=0
+                if is_exist_declarest==0:
+                    for entity in current_scope.get_mainctx():
+                        if not (entity.is_defined() )and entity.get_entity_name() == var_type and entity.get_entity_type() == "class":
+                            is_exist_define_not_declare = 1
+                            break
+                    if is_exist_define_not_declare==1:
+                        #TODO Implement kiarash Idea
+                         print("type '" + var_type + "' is defined but is not declared")
+                         exit()
+
+                    print("type '" + var_type + "' is not defined and is not declared")
+                    exit()
+
+
+
+            while not temp_stack.is_empty():
+                self.__programStack.push(temp_stack.pop())
+
+
+
+
+
 
     # Exit a parse tree produced by LuluParser#var_val.
     def exitVar_val(self, ctx: LuluParser.Var_valContext):
@@ -852,8 +928,19 @@ class LuluListener(ParseTreeListener):
                 exit()
             if ctx.expr() != None:
 
+                print(ctx.expr().getText())
+                ''' 
+                    
+                '''
                 function_output_types_rhs=list()
                 if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
+                    ##TODO : this if is for only var_def ' not for operators
+                    ## we have to complete it for operators
+                    ## for checking exprs on functions  expr -> variable op function_call
+                    ## we have to check it on expr exit functions , to check both sides of operator
+                    ## and expr should
+
+
                     function_output_types_rhs = self.__typeStack.pop()
                     var_definition_type_lhs=self.__typeStack.pop()
 
@@ -1031,15 +1118,9 @@ class LuluListener(ParseTreeListener):
     # Enter a parse tree produced by LuluParser#type_def.
     def enterType_def(self, ctx: LuluParser.Type_defContext):
         class_name= ctx.Identifiers(0).getText()
-
         root_scope=self.__programStack.top()
+        root_scope.set_class_entity_is_defined(class_name)
 
-        for entity in root_scope.get_mainctx():
-            if entity.get_entity_type()=="class" and entity.get_entity_name()==class_name:
-                entity.set_is_defined()
-
-
-        print("defined")
 
     # Exit a parse tree produced by LuluParser#type_def.
     def exitType_def(self, ctx: LuluParser.Type_defContext):
