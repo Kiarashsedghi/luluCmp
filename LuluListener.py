@@ -56,6 +56,27 @@ else:
     }
 
 
+    class Queue :
+        def __init__(self):
+            self.__Container = list()
+        def enqueue(self,item):
+            self.__Container.append(item)
+
+        def dequeue(self):
+            return self.__Container.pop(0)
+        def getQueue(self):
+            return self.__Container
+        def is_empty(self):
+            if (len(self.__Container)) ==0:
+                return True
+            return False
+        def search_in_queue (self , toSearch) :
+            for item in self.__Container :
+                if item[0] == toSearch :
+                    return  item
+            return None
+
+
     class Stack:
 
         def __init__(self):
@@ -98,10 +119,10 @@ else:
         def search_var_in_st(self, var_name):
             for entity in self.__scopeSt:
                 if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
-                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name(),False,None)
+                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name(),False,None,entity.get_accessModifier())
 
                 elif entity.get_entity_type() == "array" and entity.get_entity_name() == var_name:
-                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name(),True,entity.get_dimension())
+                    return (entity.get_data_type(),entity.is_const(),entity.get_entity_name(),True,entity.get_dimension(),entity.get_accessModifier())
 
             return None
 
@@ -218,9 +239,9 @@ else:
             for entity in self.__declareSt:
                 if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
 
-                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), False, None)
+                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), False, None,entity.get_accessModifier())
                 elif entity.get_entity_type() == "array" and entity.get_entity_name == var_name:
-                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), True, entity.get_dimension())
+                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), True, entity.get_dimension(),entity.get_accessModifier)
 
             return None
 
@@ -319,6 +340,7 @@ else:
             self.__dataType = str()  ## int float double string
             self.__Value = str()  # TODO  may use in future
             self.__const = False
+            self.__accessModifier = 'private'
 
         def set_data_type(self, data_type):
             self.__dataType = data_type
@@ -337,6 +359,10 @@ else:
 
         def is_const(self):
             return self.__const
+        def set_accessModifier(self , accessModifier):
+            self.__accessModifier = accessModifier
+        def get_accessModifier(self):
+            return self.__accessModifier
 
         @staticmethod
         def check_type_assigment(l_type, r_type):
@@ -526,45 +552,33 @@ else:
     class ClassEntity(Entity):
         def __init__(self, entity_type):
             super().__init__(entity_type)
+            self.__parentClassName= None
             self.__isdefined=False
+            self.__parentPtr = 0
+            self.__classScope= 0
 
         def is_defined(self):
             return self.__isdefined
 
         def set_is_defined(self):
             self.__isdefined = True
+        def set_parentClassName(self, parentName):
+            self.__parentClassName = parentName
+        def get_parentClassName(self):
+            return self.__parentClassName
+
+        def set_parentPtr(self,parent_ptr):
+            self.__parentPtr=parent_ptr
+        def get_parentPtr(self):
+            return self.__parentPtr
 
 
+        def set_class_scope(self, class_scope):
+            self.__classScope = class_scope
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        def get_class_scope(self):
+          return self.__classScope
 
     # This class defines a complete listener for a parse tree produced by LuluParser.
 
@@ -575,6 +589,7 @@ class LuluListener(ParseTreeListener):
     def __init__(self):
         self.__programStack = Stack()
         self.__typeStack = Stack()
+        self.__classQueue = Queue()
         self.__arrayType = str()
         self.__func_dcl_ip = str()
         self.__func_dcl_op = str()
@@ -586,7 +601,6 @@ class LuluListener(ParseTreeListener):
 
     def initial_state(self):
         root_scope = RootScope('root')
-
         self.__programStack.push(root_scope)
 
     def future_look(self, l):
@@ -908,9 +922,7 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#var_val.
     def exitVar_val(self, ctx: LuluParser.Var_valContext):
-
         var_name = ctx.ref().Identifiers().getText()
-
 
         current_scope = self.__programStack.top()
 
@@ -928,11 +940,10 @@ class LuluListener(ParseTreeListener):
                 exit()
             if ctx.expr() != None:
 
-                print(ctx.expr().getText())
                 ''' 
-                    
+
                 '''
-                function_output_types_rhs=list()
+                function_output_types_rhs = list()
                 if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
                     ##TODO : this if is for only var_def ' not for operators
                     ## we have to complete it for operators
@@ -940,18 +951,17 @@ class LuluListener(ParseTreeListener):
                     ## we have to check it on expr exit functions , to check both sides of operator
                     ## and expr should
 
-
                     function_output_types_rhs = self.__typeStack.pop()
-                    var_definition_type_lhs=self.__typeStack.pop()
+                    var_definition_type_lhs = self.__typeStack.pop()
 
-                    print(function_output_types_rhs,var_definition_type_lhs)
+                    print(function_output_types_rhs, var_definition_type_lhs)
 
-
-                    cnt=0
-                    for function_op_type in function_output_types_rhs :
+                    cnt = 0
+                    for function_op_type in function_output_types_rhs:
                         if sum(c.isdigit() for c in function_op_type) == 1 and \
-                                VariableEntity.check_type_assigment(var_definition_type_lhs, (function_op_type[:-1]).capitalize()):
-                                cnt+=1
+                                VariableEntity.check_type_assigment(var_definition_type_lhs,
+                                                                    (function_op_type[:-1]).capitalize()):
+                            cnt += 1
 
                     if cnt == 0:
                         print("No function found which matches the lhs variable type vardef")
@@ -978,11 +988,8 @@ class LuluListener(ParseTreeListener):
                         exit()
                     self.__typeStack.push(lhs_type)
 
-
-
             ''' detect if variable is an array '''
             if ArrayEntity.is_array(ctx.ref()):
-
 
                 newArray = ArrayEntity('array')
                 newArray.set_entity_name(var_name)
@@ -1012,8 +1019,14 @@ class LuluListener(ParseTreeListener):
                 # newVariable.set_data_value() ## We dont need this right now
                 var_type = self.__typeStack.top()
                 newVariable.set_data_type(var_type)
+
                 if ctx.parentCtx.Const() != None:
                     newVariable.set_is_const()
+
+                if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == 'component' :
+                    if ctx.parentCtx.parentCtx.access_modifier() :
+                        newVariable.set_accessModifier(ctx.parentCtx.parentCtx.access_modifier().getText())
+
                 if current_scope_type == 'root':
                     current_scope.add_to_declare_st(newVariable)
                 else:
@@ -1022,11 +1035,9 @@ class LuluListener(ParseTreeListener):
 
 
         else:
-            open("./prg_functions",'w').close()
+            open("./prg_functions", 'w').close()
             print('double declaration of ', var_name, ' detected')
             exit()
-
-
 
     # Enter a parse tree produced by LuluParser#fst_dcl.
     def enterFst_dcl(self, ctx: LuluParser.Fst_dclContext):
@@ -1118,15 +1129,20 @@ class LuluListener(ParseTreeListener):
     # Enter a parse tree produced by LuluParser#type_def.
     def enterType_def(self, ctx: LuluParser.Type_defContext):
 
+
         class_name= ctx.Identifiers(0).getText()
+
+        global class_entity
+        for entity in self.__programStack.top().get_mainctx():
+            if entity.get_entity_type() =='class' and entity.get_entity_name() ==class_name :
+                class_entity = entity
+
 
         '''checking father class existance in mainctx and declare st'''
         if len(ctx.Identifiers())==2:
             class_father_name=ctx.Identifiers(1).getText()
 
-
             root_scope=self.__programStack.top()
-
             is_exist_mainctx=0
 
             for entity in root_scope.get_mainctx():
@@ -1154,34 +1170,89 @@ class LuluListener(ParseTreeListener):
                     print("type '" + class_father_name + "' is not defined and is not declared")
                     exit()
 
+            for entity in root_scope.get_mainctx():
 
+                if entity.get_entity_type()=="class" and entity.is_defined() and entity.get_entity_name()==class_father_name:
+                    class_entity.set_parentPtr(entity)
+                    break
 
+                    ## add father here
 
-
-
-
-
-
-
-
-
-
-        root_scope=self.__programStack.top()
+        """
+            we sure that top of program stack is always root in type_def , so we just set is define of type to true 
+            
+        """
+        root_scope=self.__programStack.pop()
         root_scope.set_class_entity_is_defined(class_name)
+        self.__programStack.push(root_scope)
+
+        """
+            we create a scope for this class if any condition pass successfully
+        """
 
 
+        '''
+    
+        '''
+        newScope = Scope('class')
+        className = ctx.Identifiers(0).getText()
+
+
+        '''
+            we checking 'super' key for variable : 
+            we found that we need address of current newScope in variable in case 'super'
+            because in normal mode we push the last information about scope at exitType_def
+            and in 'super' case we need newScope address before exitVar_type 
+            we wanted to search that address in mainctx and find the current class Entity 
+            to update parentPrt :)
+        '''
+        for entity in (self.__programStack.top()).get_mainctx():
+            if entity.get_entity_type()=="class" and entity.get_entity_name()==className :
+                entity.set_class_scope(newScope)
+                break
+
+
+        self.__programStack.push(newScope)
 
     # Exit a parse tree produced by LuluParser#type_def.
     def exitType_def(self, ctx: LuluParser.Type_defContext):
-        pass
+        '''
+                  we have to pop from programStack , we sure that is
+                  scope of class ,
+                  here we enqueue in classQueue for inheritance
+                  a tuple of ( 'exitedClassNameScope' , 'exitedScope' )
+
+              '''
+
+        className = ctx.Identifiers(0).getText()
+        classScope=self.__programStack.pop()
+        for entity in (self.__programStack.top()).get_mainctx():
+            if entity.get_entity_type()=="class" and entity.get_entity_name()==className :
+                entity.set_class_scope(classScope)
+                break
 
     # Enter a parse tree produced by LuluParser#component.
     def enterComponent(self, ctx: LuluParser.ComponentContext):
         pass
+        # className = ctx.parentCtx.Identifiers(0).getText()
+        # # print(self.__programStack.getStack() , 'this is program stack :d ')
+        # temp = self.__programStack.pop()
+        # root = self.__programStack.top()
+        # # print( self.__programStack.getStack(), 'after changin program stack ^_^')
+        #
+        # # print(temp , 'this is temp :(')
+        # self.__programStack.push(temp)
+        # for entity in root.get_mainctx() :
+        #     if entity.get_entity_type() == 'class' and entity.get_entity_name() ==className :
+        #         print(entity.get_parentPtr() , entity.get_entity_name())
+        #         break
+
 
     # Exit a parse tree produced by LuluParser#component.
     def exitComponent(self, ctx: LuluParser.ComponentContext):
-        pass
+      pass
+
+
 
     # Enter a parse tree produced by LuluParser#access_modifier.
     def enterAccess_modifier(self, ctx: LuluParser.Access_modifierContext):
@@ -1404,31 +1475,95 @@ class LuluListener(ParseTreeListener):
 
         variable_name = ctx.ref(0).Identifiers().getText()
 
-
         temp_list = list()
-
         search_st_result = None
-        while (len(self.__programStack.getStack()) != 0):
 
-            current_scope = self.__programStack.pop()
-            temp_list.append(current_scope)
-            if current_scope.get_scope_type() == "root":
-                search_st_result = current_scope.search_var_in_dclst(variable_name)
-                if search_st_result != None :
-                    break
-            else:
-                search_st_result = current_scope.search_var_in_st(variable_name)
-                if search_st_result != None:
-                    break
+        if ctx.This():
+            while True:
+                current_scope=self.__programStack.pop()
+                temp_list.append(current_scope)
 
-        if search_st_result == None:
-            print("variable " + variable_name + " Is not declared.")
-            exit()
+                if current_scope.get_scope_type()=="root":
+                    print("Cannot use 'this' out of class")
+                    exit()
+                elif current_scope.get_scope_type()=="class":
+                    search_st_result = current_scope.search_var_in_st(variable_name)
+                    if search_st_result != None:
+                        break
+                    else:
+                        print("variable " + variable_name + " Is not declared in this class")
+                        exit()
+
+            for i in range(len(temp_list) - 1, -1, -1):
+                self.__programStack.push(temp_list[i])
+
+        elif ctx.Super():
+
+            while True:
+                current_scope = self.__programStack.pop()
+                temp_list.append(current_scope)
+
+                if current_scope.get_scope_type() == "root":
+                    print("Cannot use 'super' out of class")
+                    exit()
+
+                elif current_scope.get_scope_type()=="class":
+
+
+                    super_class_scope=None
+                    for entity in (self.__programStack.top()).get_mainctx():
+                        if entity.get_entity_type()=="class" and entity.get_class_scope() == current_scope :
+                            super_class_scope=(entity.get_parentPtr()).get_class_scope()
+
+
+                    search_st_result = super_class_scope.search_var_in_st(variable_name)
+                    if search_st_result == None:
+                        print("Variable '" + variable_name + "' not defined in parent class")
+                        exit()
+                    else:
+
+                        if (search_st_result[5] == 'private') :
+                            print("variable '",variable_name,"' is private in parent class , and cannot be accessed by 'super'.")
+                            exit()
+
+                        break
+            for i in range(len(temp_list) - 1, -1, -1):
+                self.__programStack.push(temp_list[i])
+
 
 
         else:
-            for i in range(len(temp_list)-1 , -1 , -1) :
-                self.__programStack.push(temp_list[i])
+            while (len(self.__programStack.getStack()) != 0):
+
+                current_scope = self.__programStack.pop()
+                temp_list.append(current_scope)
+                if current_scope.get_scope_type() == "root":
+                    search_st_result = current_scope.search_var_in_dclst(variable_name)
+                    if search_st_result != None:
+                        break
+                elif current_scope.get_scope_type() == "class":
+                    continue
+
+                else:
+                    search_st_result = current_scope.search_var_in_st(variable_name)
+                    if search_st_result != None:
+                        break
+
+            if search_st_result == None:
+                print("variable " + variable_name + " Is not declared.")
+                exit()
+
+
+            else:
+                for i in range(len(temp_list) - 1, -1, -1):
+                    self.__programStack.push(temp_list[i])
+
+
+
+
+
+
+
 
 
 
@@ -1783,9 +1918,4 @@ class LuluListener(ParseTreeListener):
                         because we want to check each array_elem type in exit assign for each variable
                                 it is not important every array_elem type has same type because they can be converted to a common type
                 """
-
-
-
-
-
 
