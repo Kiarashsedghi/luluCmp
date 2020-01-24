@@ -1117,9 +1117,58 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#type_def.
     def enterType_def(self, ctx: LuluParser.Type_defContext):
+
         class_name= ctx.Identifiers(0).getText()
+
+        '''checking father class existance in mainctx and declare st'''
+        if len(ctx.Identifiers())==2:
+            class_father_name=ctx.Identifiers(1).getText()
+
+
+            root_scope=self.__programStack.top()
+
+            is_exist_mainctx=0
+
+            for entity in root_scope.get_mainctx():
+                if entity.get_entity_type()=="class" and entity.is_defined() and entity.get_entity_name()==class_father_name:
+                    is_exist_mainctx=1
+                    break
+            if is_exist_mainctx==0:
+
+                is_exist_declarest=0
+                for entity in root_scope.get_declare_St():
+                    if entity.get_entity_type() == "class" and entity.get_entity_name() == class_father_name:
+                        is_exist_declarest = 1
+                        break
+                if is_exist_declarest==0:
+                    is_defined_not_declared=0
+                    for entity in root_scope.get_mainctx():
+                        if entity.get_entity_type() == "class" and  (not entity.is_defined()) and entity.get_entity_name() == class_father_name:
+                            is_defined_not_declared = 1
+                            break
+
+                    if is_defined_not_declared ==1 :
+                        print("Father class '" + class_father_name + "' is defined but not declared")
+                        exit()
+
+                    print("type '" + class_father_name + "' is not defined and is not declared")
+                    exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
         root_scope=self.__programStack.top()
         root_scope.set_class_entity_is_defined(class_name)
+
 
 
     # Exit a parse tree produced by LuluParser#type_def.
