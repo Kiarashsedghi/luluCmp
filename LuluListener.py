@@ -141,6 +141,8 @@ else:
             self.__mainctx.append(entity)
 
 
+        
+
         def search_class_in_mainctx(self, class_name):
             for entity in self.__mainctx:
                 if entity.get_entity_type() == "class" and entity.get_entity_name() == class_name:
@@ -253,6 +255,14 @@ else:
             super().__init__(entity_type)
             self.__inputParams = list()
             self.__outputParams = list()
+            self.__isdefined = False             # helps for not clearing mainctx
+
+
+        def set_is_defined(self):
+            self.__isdefined=True
+
+        def is_defined(self):
+            return self.__isdefined
 
         @staticmethod
         def checksignature(signature1, signature2):
@@ -263,8 +273,11 @@ else:
 
         @staticmethod
         def check_fcall_signature(signature1, signature2):
+
+
+
             for i in range(2):
-                if signature1[i].lower() != signature2[i].lower():
+                if signature1[i] != signature2[i]:
                     return False
             return True
 
@@ -446,14 +459,6 @@ else:
 
 
 
-
-
-
-
-
-
-
-
     class ArrayEntity(Entity):
         def __init__(self, entity_type):
             super().__init__(entity_type)
@@ -499,7 +504,13 @@ else:
     class ClassEntity(Entity):
         def __init__(self, entity_type):
             super().__init__(entity_type)
+            self.__isdefined=False
 
+        def is_defined(self):
+            return self.__isdefined
+
+        def set_is_defined(self):
+            return self.__isdefined
 
 
 
@@ -579,6 +590,31 @@ class LuluListener(ParseTreeListener):
 
 
         elif l[-2].startswith("function"):
+            '''first check if ip parameters are not similar'''
+            inside_curly_braces = (l[-2][l[-2].index("(") + 1:l[-2].index(")")]).split(",")
+
+            list_ip_params = []
+            for i in range(l.index("&&")):
+                list_ip_params.append(inside_curly_braces[i].strip(l[i]).strip("[]"))
+
+
+
+            if l[-1] in list_ip_params :
+                print("Input Parameters should not have similar name with function name")
+                exit()
+
+
+
+
+            if (list_ip_params.count(list_ip_params[0]) == len(list_ip_params)) and len(list_ip_params)!=1:
+                print("Input parameters of function '" + l[-1]+"' "  + "should not have same name")
+                exit()
+
+
+
+
+
+
             x = (l[-2][:l[-2].index("{")])
             q = (x.split(","))
             for i in range(l.index("&&")):
@@ -600,6 +636,56 @@ class LuluListener(ParseTreeListener):
 
 
         else:
+            '''first check if op parameters are not similar'''
+
+            a_p = l[-2].split("=")
+            part_output = (a_p[0][a_p[0].index("(") + 1:a_p[0].index(")")]).split(",")
+
+            part_input = (a_p[1][a_p[1].index("(") + 1:a_p[1].index(")")]).split(",")
+
+            input_parameter_types = l[l.index("&&") + 1:-3]
+
+            list_ip_params = []
+            list_op_params = []
+            for i in range(l.index("&&")):
+                list_op_params.append((part_output[i].replace(l[i], "")).replace("[]", ""))
+
+            for i in range(len(input_parameter_types)):
+                list_ip_params.append((part_input[i].replace(input_parameter_types[i], "")).replace("[]", ""))
+
+            if l[-1] in list_ip_params :
+                print("Input Parameters should not have similar name with function name")
+                exit()
+
+            if l[-1] in list_op_params :
+                print("Output Parameters should not have similar name with function name")
+                exit()
+
+            if (list_op_params.count(list_op_params[0]) == len(list_op_params)) and len(list_op_params) != 1:
+                print("output parameters of function '" + l[-1] + "' should not be same")
+                exit()
+            elif (list_ip_params.count(list_ip_params[0]) == len(list_ip_params)) and len(list_ip_params) != 1:
+                print("input parameters of function '" + l[-1] + "' should not be same")
+                exit()
+
+            for input_parameter in list_ip_params:
+                if input_parameter in list_op_params:
+                    print("Function '" + l[
+                        -1] + " ' shares input parameter '" + input_parameter + "' with output parameters")
+                    exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
             x = (l[-2][:l[-2].index("{")])
             q = (x.split("=")[0].split(","))
             q1 = (x.split("=")[1].split(","))
@@ -690,7 +776,7 @@ class LuluListener(ParseTreeListener):
             self.__programStack.push(newFuncScope)
 
         elif (Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'loop_stmt' or  Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'cond_stmt') and ctx.parentCtx.getChild(0).getText()!='for':
-
+            # print(ctx.parentCtx.getChild(0).getText())
             newRegularScope = Scope('regular')
             self.__programStack.push(newRegularScope)
 
@@ -766,22 +852,45 @@ class LuluListener(ParseTreeListener):
                 exit()
             if ctx.expr() != None:
 
+                function_output_types_rhs=list()
+                if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
+                    function_output_types_rhs = self.__typeStack.pop()
+                    var_definition_type_lhs=self.__typeStack.pop()
+
+                    print(function_output_types_rhs,var_definition_type_lhs)
 
 
+                    cnt=0
+                    for function_op_type in function_output_types_rhs :
+                        if sum(c.isdigit() for c in function_op_type) == 1 and \
+                                VariableEntity.check_type_assigment(var_definition_type_lhs, (function_op_type[:-1]).capitalize()):
+                                cnt+=1
 
-                # print(list(ctx.getRuleContext().getText().split("=")[1]))
-                # print(ctx.expr().getChild(0).getRuleIndex())
+                    if cnt == 0:
+                        print("No function found which matches the lhs variable type vardef")
+                        exit()
+                    elif cnt > 1:
+                        print("ambiguity : Multi function found detected for assignment ")
+                        exit()
+                    ## TODO check these logic again
+                    cnt = 0
+                    self.__typeStack.push(var_definition_type_lhs)
+                else:
 
-                # TODO set value when we have [1,2,3,4,5]
+                    # print(list(ctx.getRuleContext().getText().split("=")[1]))
+                    # print(ctx.expr().getChild(0).getRuleIndex())
 
-                '''checking assignment sides have convertible type'''
-                rhs_type = self.__typeStack.pop()
-                lhs_type = self.__typeStack.pop()
+                    # TODO set value when we have [1,2,3,4,5]
 
-                if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)):
-                    print('this is khata for type assigment ', var_name)
-                    exit()
-                self.__typeStack.push(lhs_type)
+                    '''checking assignment sides have convertible type'''
+                    rhs_type = self.__typeStack.pop()
+                    lhs_type = self.__typeStack.pop()
+
+                    if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)):
+                        print('this is khata for type assigment ', var_name)
+                        exit()
+                    self.__typeStack.push(lhs_type)
+
 
 
             ''' detect if variable is an array '''
@@ -830,7 +939,7 @@ class LuluListener(ParseTreeListener):
             print('double declaration of ', var_name, ' detected')
             exit()
 
-    pass
+
 
     # Enter a parse tree produced by LuluParser#fst_dcl.
     def enterFst_dcl(self, ctx: LuluParser.Fst_dclContext):
@@ -921,7 +1030,16 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#type_def.
     def enterType_def(self, ctx: LuluParser.Type_defContext):
-        pass
+        class_name= ctx.Identifiers(0).getText()
+
+        root_scope=self.__programStack.top()
+
+        for entity in root_scope.get_mainctx():
+            if entity.get_entity_type()=="class" and entity.get_entity_name()==class_name:
+                entity.set_is_defined()
+
+
+        print("defined")
 
     # Exit a parse tree produced by LuluParser#type_def.
     def exitType_def(self, ctx: LuluParser.Type_defContext):
@@ -957,7 +1075,34 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#func_handler.
     def exitFunc_handler(self, ctx: LuluParser.Func_handlerContext):
-        pass
+        if ctx.params() == None :
+            self.__func_call_ip=None
+
+
+
+        f1_s = self.__programStack.pop()
+        roots = self.__programStack.top()
+        self.__programStack.push(f1_s)
+
+        '''searching scopes to find a function with a function call signature
+        function call signature : (f_name, input_parameters)
+        '''
+
+        searching_result = (
+            roots.search_fcall_sig_in_dclst((ctx.Identifiers().getText(), self.__func_call_ip)))
+
+
+        '''when no function found'''
+        if len(searching_result) == 0:
+            # TODO implement kiarash idea
+            print(
+                "function '" + ctx.Identifiers().getText() + "' is not defined or declared (no signature!)")
+            exit()
+
+        self.__typeStack.push(searching_result)
+
+        self.__func_call_ip = ""
+
 
     # Enter a parse tree produced by LuluParser#params.
     def enterParams(self, ctx: LuluParser.ParamsContext):
@@ -966,32 +1111,11 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#params.
     def exitParams(self, ctx: LuluParser.ParamsContext):
 
-        if Rule_Dic[ctx.parentCtx.getRuleIndex()]=="func_handler":
-
-            current_scope=self.__programStack.top()
-            f1_s=self.__programStack.pop()
-            roots=self.__programStack.top()
-            self.__programStack.push(f1_s)
-
-            '''searching scopes to find a function with a function call signature
-            function call signature : (f_name, input_parameters)
-            '''
-            searching_result=( roots.search_fcall_sig_in_dclst((ctx.parentCtx.Identifiers().getText(),self.__func_call_ip)))
-
-            '''when no function found'''
-            if len(searching_result)==0 :
-                #TODO implement kiarash idea
-                print("function '" + ctx.parentCtx.Identifiers().getText() + "' is not defined or declared (no signature!)")
-                exit()
-
-            self.__typeStack.push(searching_result)
-
-
-            self.__func_call_ip=""
-
-
-
         pass
+
+
+
+
 
 
 
@@ -1045,18 +1169,20 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#loop_stmt.
     def enterLoop_stmt(self, ctx: LuluParser.Loop_stmtContext):
-
-        if ctx.data_type() != None :
-            variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
+        if ctx.For() != None :
             newForScope = Scope('regular')
             self.__programStack.push(newForScope)
-            currentScope = self.__programStack.top() ## this is for Scope actually
-            for i in range(len(ctx.assign(0).variable())):
-                self.__typeStack.push(variable_type)
-                newVariable = VariableEntity('variable')
-                newVariable.set_data_type(variable_type)
-                newVariable.set_entity_name(ctx.assign(0).variable(i).getText())
-                currentScope.add_to_scope_st(newVariable)
+
+            if ctx.data_type() != None :
+
+                variable_type = Lexer_Dic[ctx.data_type().getChild(0).getSymbol().type]
+                currentScope = self.__programStack.top() ## this is for Scope actually
+                for i in range(len(ctx.assign(0).variable())):
+                    self.__typeStack.push(variable_type)
+                    newVariable = VariableEntity('variable')
+                    newVariable.set_data_type(variable_type)
+                    newVariable.set_entity_name(ctx.assign(0).variable(i).getText())
+                    currentScope.add_to_scope_st(newVariable)
 
 
 
@@ -1084,8 +1210,8 @@ class LuluListener(ParseTreeListener):
         #     ''' so this condition is for for statement var def'''
         #     print('this is assigment for loop')
 
-
         if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()]  == 'array' :
+
 
 
             array_elem_types = self.__typeStack.pop()
@@ -1099,6 +1225,33 @@ class LuluListener(ParseTreeListener):
                     if not VariableEntity.check_type_assigment(lhs_type , t) :
                         print ("Variable '"+ ctx.variable(len(ctx.variable())- i - 1).getText() , "' does not match '"+t+" '" )
                         exit()
+
+        elif Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
+            function_output_types = self.__typeStack.pop()
+
+            for i in range(len(ctx.variable())):
+                lhs_type = self.__typeStack.pop()
+                cnt = 0
+                muliti_output_functions = 0
+                for function_op_type in function_output_types:
+                    # if  sum(c.isdigit() for c in function_op_type) > 1:
+                    #     muliti_output_functions+=1
+                    if sum(c.isdigit() for c in function_op_type) == 1 and \
+                            VariableEntity.check_type_assigment(lhs_type, (function_op_type[:-1]).capitalize()):
+                        # TODO solve capitalize problem
+                        cnt += 1
+
+                if cnt == 0:
+                    print("No function found which matches the lhs variable type")
+                    exit()
+                elif cnt > 1:
+                    print("ambiguity : Multi function found detected for assignment ")
+                    exit()
+                ## TODO check these logic again
+                cnt = 0
+
+
+
 
         else :
             rhs_type = self.__typeStack.pop()
@@ -1122,29 +1275,21 @@ class LuluListener(ParseTreeListener):
         variable_name = ctx.ref(0).Identifiers().getText()
 
 
-        current_scope = self.__programStack.top()
         temp_list = list()
 
-        if current_scope.get_scope_type() == "root":
-            search_st_result = current_scope.search_var_in_dclst(variable_name)
+        search_st_result = None
+        while (len(self.__programStack.getStack()) != 0):
 
-        else:
-            search_st_result = current_scope.search_var_in_st(variable_name)
-            if search_st_result == None:
-
-                while (len(self.__programStack.getStack()) != 0):
-
-                    current_scope = self.__programStack.pop()
-                    if current_scope.get_scope_type() == "root":
-                        search_st_result = current_scope.search_var_in_dclst(variable_name)
-                        if search_st_result != None :
-                            temp_list.append(current_scope)
-                            break
-                    else:
-                        search_st_result = current_scope.search_var_in_st(variable_name)
-                        temp_list.append(current_scope)
-                        if search_st_result != None:
-                            break
+            current_scope = self.__programStack.pop()
+            temp_list.append(current_scope)
+            if current_scope.get_scope_type() == "root":
+                search_st_result = current_scope.search_var_in_dclst(variable_name)
+                if search_st_result != None :
+                    break
+            else:
+                search_st_result = current_scope.search_var_in_st(variable_name)
+                if search_st_result != None:
+                    break
 
         if search_st_result == None:
             print("variable " + variable_name + " Is not declared.")
@@ -1157,11 +1302,26 @@ class LuluListener(ParseTreeListener):
 
 
 
-        if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()]=="assign" and search_st_result[1]==True:
+        if Rule_Dic[ctx.parentCtx.getRuleIndex()]=="assign" and search_st_result[1]==True:
             print("Variable '"+ search_st_result[2] + "' is const and cannot be reassigned")
             exit()
         #print(search_st_result[0])
-        self.__typeStack.push(search_st_result[0])
+
+        #self.__typeStack.push(search_st_result[0])
+
+        if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == "params":
+            '''it is a regular variable not an array'''
+            if search_st_result[3] == False:
+                self.__func_call_ip += search_st_result[0] + "0"  # variabletype + 0 dimension
+
+            else:
+                '''it is an array'''
+                self.__func_call_ip += search_st_result[0] + str(len(search_st_result[4]))  ## array type + #dimensions
+
+
+        else:
+
+            self.__typeStack.push(search_st_result[0])
 
 
 
@@ -1260,8 +1420,8 @@ class LuluListener(ParseTreeListener):
     # Enter a parse tree produced by LuluParser#expr_funccall.
     def enterExpr_funccall(self, ctx: LuluParser.Expr_funccallContext):
 
-        print(ctx.func_call().func_handler().Identifiers().getText())
-        print(ctx.func_call().func_handler().params().getText())
+        #print(ctx.func_call().func_handler().Identifiers().getText())
+        #print(ctx.func_call().func_handler().params().getText())
 
         pass
 
