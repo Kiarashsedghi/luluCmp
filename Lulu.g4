@@ -74,23 +74,23 @@ variable: ( ( This | Super) '.')? ref ( '.' ref)*;
 ref: Identifiers ('[' expr ']')*;
 
 expr:
-	('!' | '~' | '-') expr
+	('!' | '~' | '-') expr       #Unaryop
 	// we've separated the '-' token from Unary_op
-	| expr Multiplicative expr
-	| expr ('+' | '-') expr
-	| expr Relational expr
-	| expr Equality expr
-	| expr Bitwise_AND expr
-	| expr Bitwise_inclusive_OR expr
-	| expr Logical_AND expr
-	| expr Logical_OR expr
-	| '(' expr ')'
-	| array
-	| const_val
-	| Allocate func_handler
-	| func_call
-	| variable
-	| Nil
+	| expr Multiplicative expr    #Multiplicative_op
+	| expr ('+' | '-') expr       #sumsub_op
+	| expr Relational expr	      #Relational_op
+	| expr Equality expr          #Eqaulity_op
+	| expr Bitwise_AND expr       #Bitwise_and_op
+	| expr Bitwise_inclusive_OR expr  #Bitwise_inclusive_or_op
+	| expr Logical_AND expr         #Logical_and_op
+	| expr Logical_OR expr		#Logical_or_op
+	| '(' expr ')'			#expr_paranthensis
+	| array				#expr_array
+	| const_val			#expr_const_val
+	| Allocate func_handler		#Allocate_func
+	| func_call			#expr_funccall
+	| variable			#expr_variable
+	| Nil				#expr_nil
 	;
 
 array: '[' ( expr | array) ( ',' ( expr | array))* ']';
@@ -152,7 +152,7 @@ Exponent: ('^') ('+' | '-')? Int_const;
 
 
 String_const:
-	'\'' (
+	['] (
 		'\\n'
 		| '\\t'
 		| '\\r'
@@ -161,7 +161,7 @@ String_const:
 		| '\\\''
 		| '\\' ('x' | 'X') [0-9a-fA-F][a-f0-9A-F]
 		| ~('\\')
-	)* '\'';
+	)*? ['];
 
 Identifiers: [a-zA-Z@_][a-zA-Z0-9@_]*;
 

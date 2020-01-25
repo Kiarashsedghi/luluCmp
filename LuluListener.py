@@ -240,8 +240,9 @@ else:
                 if entity.get_entity_type() == "variable" and entity.get_entity_name() == var_name:
 
                     return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), False, None,entity.get_accessModifier())
-                elif entity.get_entity_type() == "array" and entity.get_entity_name == var_name:
-                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), True, entity.get_dimension(),entity.get_accessModifier)
+                elif entity.get_entity_type() == "array" and entity.get_entity_name() == var_name:
+
+                    return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), True, entity.get_dimension(),entity.get_accessModifier())
 
             return None
 
@@ -366,14 +367,21 @@ else:
 
         @staticmethod
         def check_type_assigment(l_type, r_type):
+
             if "_" in r_type:
                 r_type = r_type.split('_')[0]
                 if r_type == 'Real' :
                     r_type ='Float'
 
 
+            if l_type == r_type:
+                return True
+            if not r_type in "Int Float Bool String" :
+                r_type = 'Identifiers'
+            if not l_type in "Int Float Bool String":
+                l_type = 'Identifiers'
 
-            if l_type == 'Int':
+            elif l_type == 'Int':
                 if r_type in "Int Bool Identifiers":
                     return True
                 return False
@@ -389,8 +397,7 @@ else:
                 if r_type in 'String Int Bool Identifiers':
                     return True
                 return False
-            elif l_type == r_type:  ##TODO
-                pass
+
 
         @staticmethod
         def check_type_conversion(operator,type1, type2 = None):
@@ -514,6 +521,7 @@ else:
             self.__Value = str()  # TODO  may use in future
             self.__dimension = list()
             self.__const = False
+            self.__accessModifier = 'private'
 
         def set_data_type(self, data_type):
             self.__dataType = data_type
@@ -532,6 +540,12 @@ else:
 
         def get_dimension(self):
             return self.__dimension
+
+        def set_accessModifier(self, accessModifier):
+            self.__accessModifier = accessModifier
+
+        def get_accessModifier(self):
+            return self.__accessModifier
 
         def set_is_const(self):
             self.__const = True
@@ -823,6 +837,8 @@ class LuluListener(ParseTreeListener):
     # Enter a parse tree produced by LuluParser#stmt.
     def enterStmt(self, ctx: LuluParser.StmtContext):
 
+
+
         if ctx.Break() != None :
             if Rule_Dic [ctx.parentCtx.parentCtx.getRuleIndex()] != 'loop_stmt' :
                 print("'", ctx.Break().getText(), "' use only in loop statement")
@@ -831,6 +847,59 @@ class LuluListener(ParseTreeListener):
                 print("'", ctx.Continue().getText(), "' use only in loop statement")
 
 
+        if ctx.Destruct() != None :
+            var_name = ctx.Identifiers().getText()
+            temp_list = list()
+            search_st_result =None
+
+
+            while (len(self.__programStack.getStack()) != 0):
+                current_scope = self.__programStack.pop()
+                temp_list.append(current_scope)
+                if current_scope.get_scope_type() == "root":
+                    search_st_result = current_scope.search_var_in_dclst(var_name)
+
+                    if search_st_result != None:
+
+                        if search_st_result[3] == False: ## its not array
+                            if len(ctx.getText().split('[')) > 1:
+                                print("cannot not destruct dimensions of '", var_name, "'. check dimensions.")
+                                exit()
+                            if search_st_result[0] in 'Int Float Bool String': ## it isnt identifier
+                                print("'destruct' is used only for arrays and types , cannot destruct '" ,var_name,"'.")
+                                exit()
+                        elif len(search_st_result[4]) != len(ctx.getText().split('[')) - 1: ##its array -> check dimension
+                            print("cannot not destruct dimensions of '", var_name, "'. check dimensions.")
+                            exit()
+                        break
+                elif current_scope.get_scope_type() == "class":
+                    continue
+
+                else:
+                    search_st_result = current_scope.search_var_in_st(var_name)
+                    if search_st_result != None:
+                        if search_st_result[3] == False:  ## its not array
+                            if len(ctx.getText().split('[')) > 1:
+                                print("cannot not destruct dimensions of '", var_name, "'. check dimensions.")
+                                exit()
+                            if search_st_result[0] in 'Int Float Bool String':  ## it isnt identifier
+                                print("'destruct' is used only for arrays and types , cannot destruct '", var_name,
+                                      "'.")
+                                exit()
+                        elif len(search_st_result[4]) != len(
+                                ctx.getText().split('[')) - 1:  ##its array -> check dimension
+                            print("cannot not destruct dimensions of '", var_name, "'. check dimensions.")
+                            exit()
+                        break
+
+            if search_st_result == None:
+                print("variable " + var_name + " Is not declared.")
+                exit()
+
+
+            else:
+                for i in range(len(temp_list) - 1, -1, -1):
+                    self.__programStack.push(temp_list[i])
 
 
 
@@ -934,48 +1003,57 @@ class LuluListener(ParseTreeListener):
         else:
             search_result = current_scope.search_var_in_st(var_name)
 
+
         if search_result == None:
             if ctx.expr() == None and ctx.parentCtx.Const() != None:
                 print("const variable " + var_name + "  should be initialized when define")
                 exit()
             if ctx.expr() != None:
-
-                ''' 
-
-                '''
                 function_output_types_rhs = list()
-                if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
-                    ##TODO : this if is for only var_def ' not for operators
-                    ## we have to complete it for operators
-                    ## for checking exprs on functions  expr -> variable op function_call
-                    ## we have to check it on expr exit functions , to check both sides of operator
-                    ## and expr should
 
-                    function_output_types_rhs = self.__typeStack.pop()
-                    var_definition_type_lhs = self.__typeStack.pop()
+                if hasattr(ctx.expr().getChild(0) , 'getRuleIndex') :
 
-                    print(function_output_types_rhs, var_definition_type_lhs)
+                    if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
+                        ##TODO : this if is for only var_def ' not for operators
+                        ## we have to complete it for operators
+                        ## for checking exprs on functions  expr -> variable op function_call
+                        ## we have to check it on expr exit functions , to check both sides of operator
+                        ## and expr should
 
-                    cnt = 0
-                    for function_op_type in function_output_types_rhs:
-                        if sum(c.isdigit() for c in function_op_type) == 1 and \
-                                VariableEntity.check_type_assigment(var_definition_type_lhs,
-                                                                    (function_op_type[:-1]).capitalize()):
-                            cnt += 1
+                        function_output_types_rhs = self.__typeStack.pop()
+                        var_definition_type_lhs = self.__typeStack.pop()
 
-                    if cnt == 0:
-                        print("No function found which matches the lhs variable type vardef")
-                        exit()
-                    elif cnt > 1:
-                        print("ambiguity : Multi function found detected for assignment ")
-                        exit()
-                    ## TODO check these logic again
-                    cnt = 0
-                    self.__typeStack.push(var_definition_type_lhs)
+
+                        cnt = 0
+                        for function_op_type in function_output_types_rhs:
+                            if sum(c.isdigit() for c in function_op_type) == 1 and \
+                                    VariableEntity.check_type_assigment(var_definition_type_lhs,
+                                                                        (function_op_type[:-1]).capitalize()):
+                                cnt += 1
+
+                        if cnt == 0:
+                            print("No function found which matches the lhs variable type vardef")
+                            exit()
+                        elif cnt > 1:
+                            print("ambiguity : Multi function found detected for assignment ")
+                            exit()
+                        ## TODO check these logic again
+                        cnt = 0
+                        self.__typeStack.push(var_definition_type_lhs)
+                    else:
+
+                        # TODO set value when we have [1,2,3,4,5]
+
+                        '''checking assignment sides have convertible type'''
+                        rhs_type = self.__typeStack.pop()
+                        lhs_type = self.__typeStack.pop()
+
+                        if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)):
+                            print("can not assign '", var_name ,"'.can not convert '",rhs_type,"' to'",lhs_type,"'.")
+                            exit()
+                        self.__typeStack.push(lhs_type)
+
                 else:
-
-                    # print(list(ctx.getRuleContext().getText().split("=")[1]))
-                    # print(ctx.expr().getChild(0).getRuleIndex())
 
                     # TODO set value when we have [1,2,3,4,5]
 
@@ -987,6 +1065,7 @@ class LuluListener(ParseTreeListener):
                         print('this is khata for type assigment ', var_name)
                         exit()
                     self.__typeStack.push(lhs_type)
+
 
             ''' detect if variable is an array '''
             if ArrayEntity.is_array(ctx.ref()):
@@ -1007,12 +1086,18 @@ class LuluListener(ParseTreeListener):
                 if ctx.parentCtx.Const() != None:
                     newArray.set_is_const()
 
+                if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == 'component' :
+                    if ctx.parentCtx.parentCtx.access_modifier() :
+                        newArray.set_accessModifier(ctx.parentCtx.parentCtx.access_modifier().getText())
+
+
                 if current_scope_type == 'root':
                     current_scope.add_to_declare_st(newArray)
                 else:
                     current_scope.add_to_scope_st(newArray)
 
             else:
+
 
                 newVariable = VariableEntity('variable')
                 newVariable.set_entity_name(var_name)
@@ -1276,33 +1361,38 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#func_handler.
     def exitFunc_handler(self, ctx: LuluParser.Func_handlerContext):
-        if ctx.params() == None :
-            self.__func_call_ip=None
+        if hasattr(ctx.parentCtx , 'Allocate') :
+             # if ctx.parentCtx.Allocate() != None :
+           self.__typeStack.push(ctx.Identifiers().getText())
+        else:
+
+            if ctx.params() == None :
+                self.__func_call_ip=None
 
 
 
-        f1_s = self.__programStack.pop()
-        roots = self.__programStack.top()
-        self.__programStack.push(f1_s)
+            f1_s = self.__programStack.pop()
+            roots = self.__programStack.top()
+            self.__programStack.push(f1_s)
 
-        '''searching scopes to find a function with a function call signature
-        function call signature : (f_name, input_parameters)
-        '''
+            '''searching scopes to find a function with a function call signature
+            function call signature : (f_name, input_parameters)
+            '''
 
-        searching_result = (
-            roots.search_fcall_sig_in_dclst((ctx.Identifiers().getText(), self.__func_call_ip)))
+            searching_result = (
+                roots.search_fcall_sig_in_dclst((ctx.Identifiers().getText(), self.__func_call_ip)))
 
 
-        '''when no function found'''
-        if len(searching_result) == 0:
-            # TODO implement kiarash idea
-            print(
-                "function '" + ctx.Identifiers().getText() + "' is not defined or declared (no signature!)")
-            exit()
+            '''when no function found'''
+            if len(searching_result) == 0:
+                # TODO implement kiarash idea
+                print(
+                    "function '" + ctx.Identifiers().getText() + "' is not defined or declared (no signature!)")
+                exit()
 
-        self.__typeStack.push(searching_result)
+            self.__typeStack.push(searching_result)
 
-        self.__func_call_ip = ""
+            self.__func_call_ip = ""
 
 
     # Enter a parse tree produced by LuluParser#params.
@@ -1410,57 +1500,65 @@ class LuluListener(ParseTreeListener):
         # if Rule_Dic[ctx.parentCtx.getRuleIndex()] == 'loop_stmt' :
         #     ''' so this condition is for for statement var def'''
         #     print('this is assigment for loop')
+        if hasattr(ctx.expr().getChild(0) , 'getRuleIndex'):
+            if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == 'array':
 
-        if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()]  == 'array' :
+                array_elem_types = self.__typeStack.pop()
+                flat_array_elem_types = list()
+                util.flatten(array_elem_types, flat_array_elem_types)
+                array_elem_types = flat_array_elem_types
 
+                for i in range(len(ctx.variable())):
+                    lhs_type = self.__typeStack.pop()
+                    for t in array_elem_types:
+                        if not VariableEntity.check_type_assigment(lhs_type, t):
+                            print("Variable '" + ctx.variable(len(ctx.variable()) - i - 1).getText(),
+                                  "' does not match '" + t + " '")
+                            exit()
 
+            elif Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
+                function_output_types = self.__typeStack.pop()
 
-            array_elem_types = self.__typeStack.pop()
-            flat_array_elem_types = list()
-            util.flatten(array_elem_types , flat_array_elem_types )
-            array_elem_types = flat_array_elem_types
+                for i in range(len(ctx.variable())):
+                    lhs_type = self.__typeStack.pop()
+                    cnt = 0
+                    muliti_output_functions = 0
+                    for function_op_type in function_output_types:
+                        # if  sum(c.isdigit() for c in function_op_type) > 1:
+                        #     muliti_output_functions+=1
+                        if sum(c.isdigit() for c in function_op_type) == 1 and \
+                                VariableEntity.check_type_assigment(lhs_type, (function_op_type[:-1]).capitalize()):
+                            # TODO solve capitalize problem
+                            cnt += 1
 
-            for i in range(len(ctx.variable())) :
-                lhs_type = self.__typeStack.pop()
-                for t in array_elem_types :
-                    if not VariableEntity.check_type_assigment(lhs_type , t) :
-                        print ("Variable '"+ ctx.variable(len(ctx.variable())- i - 1).getText() , "' does not match '"+t+" '" )
+                    if cnt == 0:
+                        print("No function found which matches the lhs variable type")
                         exit()
+                    elif cnt > 1:
+                        print("ambiguity : Multi function found detected for assignment ")
+                        exit()
+                    ## TODO check these logic again
+                    cnt = 0
+            else:
+                rhs_type = self.__typeStack.pop()
 
-        elif Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
-            function_output_types = self.__typeStack.pop()
-
-            for i in range(len(ctx.variable())):
-                lhs_type = self.__typeStack.pop()
-                cnt = 0
-                muliti_output_functions = 0
-                for function_op_type in function_output_types:
-                    # if  sum(c.isdigit() for c in function_op_type) > 1:
-                    #     muliti_output_functions+=1
-                    if sum(c.isdigit() for c in function_op_type) == 1 and \
-                            VariableEntity.check_type_assigment(lhs_type, (function_op_type[:-1]).capitalize()):
-                        # TODO solve capitalize problem
-                        cnt += 1
-
-                if cnt == 0:
-                    print("No function found which matches the lhs variable type")
-                    exit()
-                elif cnt > 1:
-                    print("ambiguity : Multi function found detected for assignment ")
-                    exit()
-                ## TODO check these logic again
-                cnt = 0
-
-
-
-
-        else :
+                number_of_eles = len(ctx.variable())
+                for i in range(len(ctx.variable())):
+                    if not VariableEntity.check_type_assigment(self.__typeStack.pop(), rhs_type):
+                        print("Variable '" + ctx.variable(
+                            number_of_eles - i - 1).getText() + "' does no match type '" + rhs_type+ "'")
+                        exit()
+        else:
             rhs_type = self.__typeStack.pop()
-            number_of_eles=len(ctx.variable())
-            for i in range (len(ctx.variable())) :
-                if not VariableEntity.check_type_assigment(self.__typeStack.pop() , rhs_type) :
-                   print("Variable '"+ ctx.variable(number_of_eles-i-1).getText() + "' does no match type '" + rhs_type+"'")
-                   exit()
+            number_of_eles = len(ctx.variable())
+            for i in range(len(ctx.variable())):
+                if not VariableEntity.check_type_assigment(self.__typeStack.pop(), rhs_type):
+                    print("Variable '" + ctx.variable(
+                        number_of_eles - i - 1).getText() + "' does no match type '" + rhs_type + "'")
+                    exit()
+
+
+
 
 
 
@@ -1587,13 +1685,6 @@ class LuluListener(ParseTreeListener):
         else:
 
             self.__typeStack.push(search_st_result[0])
-
-
-
-
-
-
-
 
 
     # Enter a parse tree produced by LuluParser#ref.
@@ -1729,9 +1820,13 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#expr_const_val.
     def exitExpr_const_val(self, ctx: LuluParser.Expr_const_valContext):
+        const_val_type = Lexer_Dic[ctx.const_val().getChild(0).getSymbol().type]
 
         ## TODO  String_const has problem
-        self.__typeStack.push(Lexer_Dic[ctx.const_val().getChild(0).getSymbol().type])
+        if const_val_type == 'Int_const' :
+            self.__typeStack.push(const_val_type.split('_')[0])
+        else:
+            self.__typeStack.push(const_val_type)
 
     # Enter a parse tree produced by LuluParser#expr_array.
     def enterExpr_array(self, ctx: LuluParser.Expr_arrayContext):
@@ -1756,6 +1851,11 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Allocate_func.
     def exitAllocate_func(self, ctx: LuluParser.Allocate_funcContext):
+
+
+
+
+
         pass
 
     # Enter a parse tree produced by LuluParser#Multiplicative_op.
