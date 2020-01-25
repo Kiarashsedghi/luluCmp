@@ -1,10 +1,13 @@
 # Generated from Lulu.g4 by ANTLR 4.7.2
 from antlr4 import *
+import re
 import utils as util
 if __name__ is not None and "." in __name__:
     from .LuluParser import LuluParser
 else:
     from LuluParser import LuluParser
+
+
 
     ##search entity
 
@@ -56,27 +59,6 @@ else:
     }
 
 
-    class Queue :
-        def __init__(self):
-            self.__Container = list()
-        def enqueue(self,item):
-            self.__Container.append(item)
-
-        def dequeue(self):
-            return self.__Container.pop(0)
-        def getQueue(self):
-            return self.__Container
-        def is_empty(self):
-            if (len(self.__Container)) ==0:
-                return True
-            return False
-        def search_in_queue (self , toSearch) :
-            for item in self.__Container :
-                if item[0] == toSearch :
-                    return  item
-            return None
-
-
     class Stack:
 
         def __init__(self):
@@ -126,13 +108,25 @@ else:
 
             return None
 
+        def search_func_in_st(self, func_signature):
 
-        def search_func_in_st(self, func_name):
             for entity in self.__scopeSt:
-                if entity.get_entity_type() == "function" and entity.get_entity_name() == func_name:
-                    return (entity.get_input_params(), entity.get_output_params())
+                if entity.get_entity_type() == "function" :
+                    #TODO creat get_function_signature
+                    if FunctionEntity.checksignature(func_signature,(entity.get_entity_name(),entity.get_input_params(),entity.get_output_params())):
+                        return (entity.get_input_params(), entity.get_output_params())
 
             return None
+
+
+
+
+        # def search_func_in_st(self, func_name):
+        #     for entity in self.__scopeSt:
+        #         if entity.get_entity_type() == "function" and entity.get_entity_name() == func_name:
+        #             return (entity.get_input_params(), entity.get_output_params())
+        #
+        #     return None
 
 # NEW
         def search_fcall_sig_in_st(self, fcall_signature):
@@ -241,7 +235,6 @@ else:
 
                     return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), False, None,entity.get_accessModifier())
                 elif entity.get_entity_type() == "array" and entity.get_entity_name() == var_name:
-
                     return (entity.get_data_type(),entity.is_const(), entity.get_entity_name(), True, entity.get_dimension(),entity.get_accessModifier())
 
             return None
@@ -263,7 +256,7 @@ else:
 
 
 
-        def set_func_entity_is_defined (self , func_signature) :
+        def set_func_entity_is_defined (self , func_signature):
             pass
 
 
@@ -284,7 +277,7 @@ else:
         def get_entity_name(self):
             return self.__enName
 
-
+#Change
     class FunctionEntity(Entity):
 
         def __init__(self, entity_type):
@@ -292,7 +285,13 @@ else:
             self.__inputParams = list()
             self.__outputParams = list()
             self.__isdefined = False             # helps for not clearing mainctx
+            self.__accessModifier = 'private'
 
+        def set_accessModifier(self, accessModifier):
+            self.__accessModifier = accessModifier
+
+        def get_accessModifier(self):
+            return self.__accessModifier
 
         def set_is_defined(self):
             self.__isdefined=True
@@ -397,6 +396,9 @@ else:
                 if r_type in 'String Int Bool Identifiers':
                     return True
                 return False
+
+
+
 
 
         @staticmethod
@@ -513,7 +515,7 @@ else:
 
 
 
-
+## Changes
     class ArrayEntity(Entity):
         def __init__(self, entity_type):
             super().__init__(entity_type)
@@ -522,6 +524,14 @@ else:
             self.__dimension = list()
             self.__const = False
             self.__accessModifier = 'private'
+
+
+        def set_accessModifier(self , accessModifier):
+            self.__accessModifier = accessModifier
+        def get_accessModifier(self):
+            return self.__accessModifier
+
+
 
         def set_data_type(self, data_type):
             self.__dataType = data_type
@@ -540,12 +550,6 @@ else:
 
         def get_dimension(self):
             return self.__dimension
-
-        def set_accessModifier(self, accessModifier):
-            self.__accessModifier = accessModifier
-
-        def get_accessModifier(self):
-            return self.__accessModifier
 
         def set_is_const(self):
             self.__const = True
@@ -603,11 +607,11 @@ class LuluListener(ParseTreeListener):
     def __init__(self):
         self.__programStack = Stack()
         self.__typeStack = Stack()
-        self.__classQueue = Queue()
         self.__arrayType = str()
         self.__func_dcl_ip = str()
         self.__func_dcl_op = str()
         self.__func_call_ip = str()
+        self.__func_def_params=str()  ## For generating function siganture from func_def tree
         '''when we have array in rhs of an assignment and we want types of all elements in array
         not in form of  [[float],int]
         '''
@@ -714,25 +718,15 @@ class LuluListener(ParseTreeListener):
             if (list_op_params.count(list_op_params[0]) == len(list_op_params)) and len(list_op_params) != 1:
                 print("output parameters of function '" + l[-1] + "' should not be same")
                 exit()
-            elif (list_ip_params.count(list_ip_params[0]) == len(list_ip_params)) and len(list_ip_params) != 1:
-                print("input parameters of function '" + l[-1] + "' should not be same")
-                exit()
+            # elif (list_ip_params.count(list_ip_params[0]) == len(list_ip_params)) and len(list_ip_params) != 1:
+            #     print("input parameters of function '" + l[-1] + "' should not be same")
+            #     exit()
 
             for input_parameter in list_ip_params:
                 if input_parameter in list_op_params:
                     print("Function '" + l[
                         -1] + " ' shares input parameter '" + input_parameter + "' with output parameters")
                     exit()
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -770,7 +764,22 @@ class LuluListener(ParseTreeListener):
 
 
 
+
         root_scope=self.__programStack.top()
+
+        '''checking existance of function start'''
+
+        start_function_signature=("start",None,'int0')
+
+        search_result=root_scope.search_func_in_mainctx(start_function_signature)
+
+
+        if search_result==None:
+            print("Program does not include 'start' function")
+            exit()
+
+
+
         for i in range(len(ctx.fst_def())):
 
             '''check type definition'''
@@ -820,10 +829,228 @@ class LuluListener(ParseTreeListener):
                     print("if statement condition '"+ctx.parentCtx.expr().getRuleContext().getText()+"' can not be convert to Int")
                     exit()
 
+        '''function definition in type def'''
+        if Rule_Dic[ctx.parentCtx.getRuleIndex()] == 'func_def' and (self.__programStack.top()).get_scope_type()!="root" :
 
-        if Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'func_def' :
+
+            function_name = ctx.parentCtx.Identifiers().getText()
+            func_op_signature = ""
+            func_ip_signature = ""
+            func_ip_params_name=list()
+            func_op_params_name=list()
+            func_ip_params_type=list()
+            func_op_params_type=list()
+
+
+            current_scope = self.__programStack.top()
+
+
+            if (len(ctx.parentCtx.func_def_args())) == 2:
+
+                a = self.__func_def_params
+
+                splitted = (a.split("&")[:-1])
+
+                input_signature = splitted[0].split("^")
+                output_signature = splitted[1].split("^")
+
+                x_op = (input_signature[1:])
+                x_ip = (output_signature[1:])
+
+                ## function signature:
+
+
+                for i in range(len(x_op)):
+                    if i % 2 == 0:
+                        func_op_signature += x_op[i]
+                        func_op_params_type.append(x_op[i])
+                    else:
+                        func_op_params_name.append(x_op[i])
+
+                for i in range(len(x_ip)):
+                    if i % 2 == 0:
+                        func_ip_signature += x_ip[i]
+                        func_ip_params_type.append(x_ip[i])
+                    else:
+                        func_ip_params_name.append(x_ip[i])
+
+
+                if (func_ip_params_name.count(func_ip_params_name[0]) == len(func_ip_params_name)) and len(func_ip_params_name)!=1:
+                    print("Input parameters of function '" + function_name+"' "  + "should not have same name")
+                    exit()
+
+                if (func_op_params_name.count(func_op_params_name[0]) == len(func_op_params_name)) and len(func_op_params_name)!=1:
+                    print("Input parameters of function '" + function_name+"' "  + "should not have same name")
+                    exit()
+
+
+
+                result = current_scope.search_func_in_st((function_name, func_ip_signature, func_op_signature))
+                if result != None:
+                    print("Multi definition function '"+function_name+"' in this  scope")
+                    exit()
+
+
+                if function_name in x_ip:
+                    print("Input Parameters should not have similar name with function name")
+                    exit()
+                if function_name in x_op:
+                    print("Output Parameters should not have similar name with function name")
+                    exit()
+
+                '''adding input parameters to scope function'''
+
+
+            elif (len(ctx.parentCtx.func_def_args())) == 1:
+                current_scope=self.__programStack.top()
+                if ctx.parentCtx.getChild(0).getText()=="function":
+                    a = self.__func_def_params
+
+                    splitted = (a.split("&")[:-1])
+
+                    input_signature = splitted[0].split("^")
+                    x_ip = (input_signature[1:])
+
+                    for i in range(len(x_ip)):
+                        if i % 2 == 0:
+                            func_ip_signature += x_ip[i]
+                            func_ip_params_type.append(x_ip[i])
+                        else:
+                            func_ip_params_name.append(x_ip[i])
+
+                    if (func_ip_params_name.count(func_ip_params_name[0]) == len(func_ip_params_name)) and len(
+                            func_ip_params_name) != 1:
+                        print("Input parameters of function '" + function_name + "' " + "should not have same name")
+                        exit()
+
+
+
+                    result = current_scope.search_func_in_st((function_name, func_ip_signature, None))
+                    if result != None:
+                        print("Multi definition function '" + function_name + "' in this  scope")
+                        exit()
+                    if function_name in x_ip:
+                        print("Input Parameters should not have similar name with function name")
+                        exit()
+
+
+
+                else:
+                    a = self.__func_def_params
+
+                    splitted = (a.split("&")[:-1])
+
+                    output_signature = splitted[0].split("^")
+
+                    x_op = (output_signature[1:])
+
+
+                    ## function signature:
+
+
+
+                    for i in range(len(x_op)):
+                        if i % 2 == 0:
+                            func_op_signature += x_op[i]
+                            func_op_params_type.append(x_op[i])
+                        else:
+                            func_op_params_name.append(x_op[i])
+
+                    if (func_op_params_name.count(func_op_params_name[0]) == len(func_op_params_name)) and len(
+                            func_op_params_name) != 1:
+                        print("Output parameters of function '" + function_name + "' " + "should not have same name")
+                        exit()
+
+
+
+                    result = current_scope.search_func_in_st((function_name, None, func_op_signature))
+                    if result != None:
+                        print("Multi definition function '" + function_name + "' in this scope")
+                        exit()
+
+                    if function_name in x_op:
+                        print("Output Parameters should not have similar name with function name")
+                        exit()
+
+
+
+            elif (len(ctx.parentCtx.func_def_args())) == 0:
+                result = current_scope.search_func_in_st((function_name, None, None))
+                if result != None:
+                    print("Multi definition function '"+function_name+"' in this  scope")
+                    exit()
+
+
+
+
+            '''to make empty ip/op params to None value'''
+            if func_ip_signature == "":
+                func_ip_signature=None
+            if func_op_signature == "":
+                func_op_signature=None
+
+
+
+
+
+
+            newFunction = FunctionEntity("function")
+            newFunction.set_entity_name(function_name)
+            newFunction.set_input_params(func_ip_signature)
+            newFunction.set_output_params(func_op_signature)
+
+            '''checking if it has access modifier'''
+            if ctx.parentCtx.parentCtx.access_modifier():
+                newFunction.set_accessModifier(ctx.parentCtx.parentCtx.access_modifier().getText())
+            current_scope.add_to_scope_st(newFunction)
+
+
+            self.__func_def_params = ""
+
+
+
+
             newFuncScope = Scope('function')
+
+            '''adding input parameters to function scope'''
+
+
+
+
+            if len(func_ip_params_name)!=0:
+                for  i in range(len(func_ip_params_name)):
+                    if (func_ip_params_type[i])[-1] == "0"   :    # it is a variable
+                        newVaraible=VariableEntity("variable")
+                        newVaraible.set_entity_name(func_ip_params_name[i])
+                        newVaraible.set_data_type((func_ip_params_type[i][0:-1]).capitalize())
+                        newFuncScope.add_to_scope_st(newVaraible)
+
+                    else:
+                        newArray=ArrayEntity("array")
+                        newArray.set_entity_name(func_ip_params_name[i])
+                        newArray.set_data_type((func_ip_params_type[i][0:-1]).capitalize())
+                        newArray.set_dimension([None]*int(func_ip_params_type[i][-1]))
+                        newFuncScope.add_to_scope_st(newArray)
+
+            if len(func_op_params_name)!=0:
+                for  i in range(len(func_op_params_name)):
+                    if (func_op_params_name[i])[-1] == "0"   :    # it is a variable
+                        newVaraible=VariableEntity("variable")
+                        newVaraible.set_entity_name(func_op_params_name[i])
+                        newVaraible.set_data_type((func_op_params_type[i][0:-1]).capitalize())
+                        newFuncScope.add_to_scope_st(newVaraible)
+
+                    else:
+                        newArray=ArrayEntity("array")
+                        newArray.set_entity_name(func_op_params_name[i])
+                        newArray.set_data_type((func_op_params_type[i][0:-1]).capitalize())
+                        newArray.set_dimension([None]*int(func_op_params_type[i][-1]))
+                        newFuncScope.add_to_scope_st(newArray)
+
+
+
             self.__programStack.push(newFuncScope)
+
 
         elif (Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'loop_stmt' or  Rule_Dic[ctx .parentCtx.getRuleIndex()] == 'cond_stmt') and ctx.parentCtx.getChild(0).getText()!='for':
             # print(ctx.parentCtx.getChild(0).getText())
@@ -832,12 +1059,11 @@ class LuluListener(ParseTreeListener):
 
 
     def exitBlock(self, ctx: LuluParser.BlockContext):
-        self.__programStack.pop()
+        if (self.__programStack.top()).get_scope_type()!="root":
+            self.__programStack.pop()
 
     # Enter a parse tree produced by LuluParser#stmt.
     def enterStmt(self, ctx: LuluParser.StmtContext):
-
-
 
         if ctx.Break() != None :
             if Rule_Dic [ctx.parentCtx.parentCtx.getRuleIndex()] != 'loop_stmt' :
@@ -845,6 +1071,8 @@ class LuluListener(ParseTreeListener):
         if ctx.Continue() != None :
             if Rule_Dic [ctx.parentCtx.parentCtx.getRuleIndex()] != 'loop_stmt' :
                 print("'", ctx.Continue().getText(), "' use only in loop statement")
+
+
 
 
         if ctx.Destruct() != None :
@@ -900,6 +1128,9 @@ class LuluListener(ParseTreeListener):
             else:
                 for i in range(len(temp_list) - 1, -1, -1):
                     self.__programStack.push(temp_list[i])
+
+
+
 
 
 
@@ -973,10 +1204,10 @@ class LuluListener(ParseTreeListener):
                             break
                     if is_exist_define_not_declare==1:
                         #TODO Implement kiarash Idea
-                         print("type '" + var_type + "' is defined but is not declared")
+                         print("Type '" + var_type + "' is defined but is not declared")
                          exit()
 
-                    print("type '" + var_type + "' is not defined and is not declared")
+                    print("Type '" + var_type + "' is not defined and is not declared")
                     exit()
 
 
@@ -997,21 +1228,19 @@ class LuluListener(ParseTreeListener):
 
         current_scope_type = current_scope.get_scope_type()
 
-
         if current_scope_type == 'root':
             search_result = current_scope.search_var_in_dclst(var_name)
         else:
             search_result = current_scope.search_var_in_st(var_name)
 
-
         if search_result == None:
             if ctx.expr() == None and ctx.parentCtx.Const() != None:
-                print("const variable " + var_name + "  should be initialized when define")
+                print("Const variable " + var_name + "  should be initialized when define")
                 exit()
             if ctx.expr() != None:
                 function_output_types_rhs = list()
 
-                if hasattr(ctx.expr().getChild(0) , 'getRuleIndex') :
+                if hasattr(ctx.expr().getChild(0), 'getRuleIndex'):
 
                     if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == "func_call":
                         ##TODO : this if is for only var_def ' not for operators
@@ -1023,7 +1252,6 @@ class LuluListener(ParseTreeListener):
                         function_output_types_rhs = self.__typeStack.pop()
                         var_definition_type_lhs = self.__typeStack.pop()
 
-
                         cnt = 0
                         for function_op_type in function_output_types_rhs:
                             if sum(c.isdigit() for c in function_op_type) == 1 and \
@@ -1032,10 +1260,10 @@ class LuluListener(ParseTreeListener):
                                 cnt += 1
 
                         if cnt == 0:
-                            print("No function found which matches the lhs variable type vardef")
+                            print("No function found which matches '" , var_definition_type_lhs ,"'")
                             exit()
                         elif cnt > 1:
-                            print("ambiguity : Multi function found detected for assignment ")
+                            print("Ambiguity : Multi function found detected for assignment ")
                             exit()
                         ## TODO check these logic again
                         cnt = 0
@@ -1049,7 +1277,8 @@ class LuluListener(ParseTreeListener):
                         lhs_type = self.__typeStack.pop()
 
                         if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)):
-                            print("can not assign '", var_name ,"'.can not convert '",rhs_type,"' to'",lhs_type,"'.")
+                            print("Variable cannot be assigned, '", var_name, "'cannot be convert '", rhs_type, "' to'", lhs_type,
+                                  "'.")
                             exit()
                         self.__typeStack.push(lhs_type)
 
@@ -1062,10 +1291,9 @@ class LuluListener(ParseTreeListener):
                     lhs_type = self.__typeStack.pop()
 
                     if not (VariableEntity.check_type_assigment(lhs_type, rhs_type)):
-                        print('this is khata for type assigment ', var_name)
+                        print('this is khata ??????? for type assigment ', var_name)
                         exit()
                     self.__typeStack.push(lhs_type)
-
 
             ''' detect if variable is an array '''
             if ArrayEntity.is_array(ctx.ref()):
@@ -1086,10 +1314,9 @@ class LuluListener(ParseTreeListener):
                 if ctx.parentCtx.Const() != None:
                     newArray.set_is_const()
 
-                if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == 'component' :
-                    if ctx.parentCtx.parentCtx.access_modifier() :
+                if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == 'component':
+                    if ctx.parentCtx.parentCtx.access_modifier():
                         newArray.set_accessModifier(ctx.parentCtx.parentCtx.access_modifier().getText())
-
 
                 if current_scope_type == 'root':
                     current_scope.add_to_declare_st(newArray)
@@ -1097,7 +1324,6 @@ class LuluListener(ParseTreeListener):
                     current_scope.add_to_scope_st(newArray)
 
             else:
-
 
                 newVariable = VariableEntity('variable')
                 newVariable.set_entity_name(var_name)
@@ -1108,8 +1334,8 @@ class LuluListener(ParseTreeListener):
                 if ctx.parentCtx.Const() != None:
                     newVariable.set_is_const()
 
-                if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == 'component' :
-                    if ctx.parentCtx.parentCtx.access_modifier() :
+                if Rule_Dic[ctx.parentCtx.parentCtx.getRuleIndex()] == 'component':
+                    if ctx.parentCtx.parentCtx.access_modifier():
                         newVariable.set_accessModifier(ctx.parentCtx.parentCtx.access_modifier().getText())
 
                 if current_scope_type == 'root':
@@ -1187,11 +1413,11 @@ class LuluListener(ParseTreeListener):
         class_name = (ctx.Identifiers()).getText()
         root_scope = self.__programStack.top()
         if root_scope.is_exist_entity(class_name):
-            print("Double Declaration of type ", class_name)
+            print("Double declaration of type '", class_name ,"'")
             exit()
         else:
             if root_scope.search_class_in_mainctx(class_name) == None:
-                print("type '" + class_name +  "' is not defined")
+                print("Type '" + class_name +  "' is not defined")
                 exit()
 
 
@@ -1213,10 +1439,7 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#type_def.
     def enterType_def(self, ctx: LuluParser.Type_defContext):
-
-
         class_name= ctx.Identifiers(0).getText()
-
         global class_entity
         for entity in self.__programStack.top().get_mainctx():
             if entity.get_entity_type() =='class' and entity.get_entity_name() ==class_name :
@@ -1249,10 +1472,10 @@ class LuluListener(ParseTreeListener):
                             break
 
                     if is_defined_not_declared ==1 :
-                        print("Father class '" + class_father_name + "' is defined but not declared")
+                        print("Parent type '" + class_father_name + "' is defined but not declared")
                         exit()
 
-                    print("type '" + class_father_name + "' is not defined and is not declared")
+                    print("Type '" + class_father_name + "' is not defined and is not declared")
                     exit()
 
             for entity in root_scope.get_mainctx():
@@ -1309,6 +1532,7 @@ class LuluListener(ParseTreeListener):
 
               '''
 
+
         className = ctx.Identifiers(0).getText()
         classScope=self.__programStack.pop()
         for entity in (self.__programStack.top()).get_mainctx():
@@ -1319,18 +1543,6 @@ class LuluListener(ParseTreeListener):
     # Enter a parse tree produced by LuluParser#component.
     def enterComponent(self, ctx: LuluParser.ComponentContext):
         pass
-        # className = ctx.parentCtx.Identifiers(0).getText()
-        # # print(self.__programStack.getStack() , 'this is program stack :d ')
-        # temp = self.__programStack.pop()
-        # root = self.__programStack.top()
-        # # print( self.__programStack.getStack(), 'after changin program stack ^_^')
-        #
-        # # print(temp , 'this is temp :(')
-        # self.__programStack.push(temp)
-        # for entity in root.get_mainctx() :
-        #     if entity.get_entity_type() == 'class' and entity.get_entity_name() ==className :
-        #         print(entity.get_parentPtr() , entity.get_entity_name())
-        #         break
 
 
     # Exit a parse tree produced by LuluParser#component.
@@ -1387,7 +1599,7 @@ class LuluListener(ParseTreeListener):
             if len(searching_result) == 0:
                 # TODO implement kiarash idea
                 print(
-                    "function '" + ctx.Identifiers().getText() + "' is not defined or declared (no signature!)")
+                    "Function '" + ctx.Identifiers().getText() + "' is not defined or declared (no signature!)")
                 exit()
 
             self.__typeStack.push(searching_result)
@@ -1407,9 +1619,6 @@ class LuluListener(ParseTreeListener):
 
 
 
-
-
-
     # Enter a parse tree produced by LuluParser#func_def_args.
     def enterFunc_def_args(self, ctx: LuluParser.Func_def_argsContext):
         pass
@@ -1421,14 +1630,20 @@ class LuluListener(ParseTreeListener):
                 other cases are done in future_look_function     #TODO function input and output should be accessible
                 '''
         current_scope = self.__programStack.top()
+        cnt = 0
+        for i in range(ctx.getChildCount()):
+            if ctx.getChild(i).getText() == "[":
+                cnt += 1
+
         if current_scope.get_scope_type()=="root":
 
-            cnt = 0
-            for i in range(ctx.getChildCount()):
-                if ctx.getChild(i).getText() == "[":
-                    cnt += 1
-
             self.__func_dcl_ip += ctx.data_type().getText() + str(cnt)
+        else:
+            self.__func_def_params+= "^"+ctx.data_type().getText() + str(cnt) + "^" + ctx.Identifiers().getText()
+
+            '''this is for separating input and output params'''
+            if Rule_Dic[ctx.parentCtx.getRuleIndex()]=="func_def":
+                self.__func_def_params += "&"
 
 
 
@@ -1440,7 +1655,7 @@ class LuluListener(ParseTreeListener):
     # Exit a parse tree produced by LuluParser#func_def.
     def exitFunc_def(self, ctx: LuluParser.Func_defContext):
 
-        pass
+            pass
 
     # Enter a parse tree produced by LuluParser#cond_stmt.
     def enterCond_stmt(self, ctx: LuluParser.Cond_stmtContext):
@@ -1500,7 +1715,7 @@ class LuluListener(ParseTreeListener):
         # if Rule_Dic[ctx.parentCtx.getRuleIndex()] == 'loop_stmt' :
         #     ''' so this condition is for for statement var def'''
         #     print('this is assigment for loop')
-        if hasattr(ctx.expr().getChild(0) , 'getRuleIndex'):
+        if hasattr(ctx.expr().getChild(0), 'getRuleIndex'):
             if Rule_Dic[ctx.expr().getChild(0).getRuleIndex()] == 'array':
 
                 array_elem_types = self.__typeStack.pop()
@@ -1546,7 +1761,7 @@ class LuluListener(ParseTreeListener):
                 for i in range(len(ctx.variable())):
                     if not VariableEntity.check_type_assigment(self.__typeStack.pop(), rhs_type):
                         print("Variable '" + ctx.variable(
-                            number_of_eles - i - 1).getText() + "' does no match type '" + rhs_type+ "'")
+                            number_of_eles - i - 1).getText() + "' does not match type '" + rhs_type + "'")
                         exit()
         else:
             rhs_type = self.__typeStack.pop()
@@ -1554,8 +1769,9 @@ class LuluListener(ParseTreeListener):
             for i in range(len(ctx.variable())):
                 if not VariableEntity.check_type_assigment(self.__typeStack.pop(), rhs_type):
                     print("Variable '" + ctx.variable(
-                        number_of_eles - i - 1).getText() + "' does no match type '" + rhs_type + "'")
+                        number_of_eles - i - 1).getText() + "' does not match type '" + rhs_type + "'")
                     exit()
+
 
 
 
@@ -1576,20 +1792,22 @@ class LuluListener(ParseTreeListener):
         temp_list = list()
         search_st_result = None
 
+
         if ctx.This():
+
             while True:
                 current_scope=self.__programStack.pop()
                 temp_list.append(current_scope)
 
                 if current_scope.get_scope_type()=="root":
-                    print("Cannot use 'this' out of class")
+                    print("Cannot use 'this' out of a class scope ")
                     exit()
                 elif current_scope.get_scope_type()=="class":
                     search_st_result = current_scope.search_var_in_st(variable_name)
                     if search_st_result != None:
                         break
                     else:
-                        print("variable " + variable_name + " Is not declared in this class")
+                        print("Variable " + variable_name + " is not declared in this type")
                         exit()
 
             for i in range(len(temp_list) - 1, -1, -1):
@@ -1602,7 +1820,7 @@ class LuluListener(ParseTreeListener):
                 temp_list.append(current_scope)
 
                 if current_scope.get_scope_type() == "root":
-                    print("Cannot use 'super' out of class")
+                    print("Cannot use 'super' out of a class scope")
                     exit()
 
                 elif current_scope.get_scope_type()=="class":
@@ -1611,17 +1829,19 @@ class LuluListener(ParseTreeListener):
                     super_class_scope=None
                     for entity in (self.__programStack.top()).get_mainctx():
                         if entity.get_entity_type()=="class" and entity.get_class_scope() == current_scope :
+                            if entity.get_parentPtr()==0:
+                                print("Type '" + entity.get_entity_name() + "' is not inherited from any other type , 'super' Invlaid. ")
+                                exit()
                             super_class_scope=(entity.get_parentPtr()).get_class_scope()
-
 
                     search_st_result = super_class_scope.search_var_in_st(variable_name)
                     if search_st_result == None:
-                        print("Variable '" + variable_name + "' not defined in parent class")
+                        print("Variable '" + variable_name + "' is not defined in parent type" )
                         exit()
                     else:
 
                         if (search_st_result[5] == 'private') :
-                            print("variable '",variable_name,"' is private in parent class , and cannot be accessed by 'super'.")
+                            print("Variable '",variable_name,"' is private in parent type , and cannot be accessed by 'super' from child type " )
                             exit()
 
                         break
@@ -1648,19 +1868,33 @@ class LuluListener(ParseTreeListener):
                         break
 
             if search_st_result == None:
-                print("variable " + variable_name + " Is not declared.")
+                print("Variable '" + variable_name + "' is not declared in this scope")
                 exit()
 
 
             else:
+                #
+                # if Rule_Dic[ctx.parentCtx.getRuleIndex()]!="assign":
+                #
+                #
+                #         array_dimensions_size= (ctx.getText()).count("[")
+                #         array_dimensions_values=[]
+                #         for i in range(len(ctx.ref(0).expr())):
+                #             if (ctx.ref(0).expr(i).getText()).isnumeric():
+                #                 array_dimensions_values.append((ctx.ref(0).expr(i).getText()))
+                #             else:
+                #                 array_dimensions_values.append(None)
+                #
+                #         # array_dimensions_values=re.findall('\\[([0-9]*?)\\]', ctx.getText())
+                #         # print(array_dimensions_values)
+                #         # exit()
+                #         if len(search_st_result[4]) < array_dimensions_size:
+                #             print("Variable '" , search_st_result[2] + "' is an "+str(len(search_st_result[4]))+" dimensional array not "+str(array_dimensions_size))
+                #             exit()
+
+
                 for i in range(len(temp_list) - 1, -1, -1):
                     self.__programStack.push(temp_list[i])
-
-
-
-
-
-
 
 
 
@@ -1696,11 +1930,10 @@ class LuluListener(ParseTreeListener):
         if ctx.getChildCount() > 1:  ## We have array under ref
             array_dimension_size = len(ctx.expr())
             for i in range(array_dimension_size):
-                if self.__typeStack.pop()[0] not in "Int_const Int":  ## TODO Implement type casting
-                    print("array dimension ha ro int bede ")
-                    exit()
+                if not VariableEntity.check_type_assigment("Int" ,self.__typeStack.pop()[0] ):
 
-        pass
+                    print("Array dimensions values cannot be converted to int ")
+                    exit()
 
     # Enter a parse tree produced by LuluParser#Logical_or_op.
     def enterLogical_or_op(self, ctx: LuluParser.Logical_or_opContext):
@@ -1714,7 +1947,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None :
             self.__typeStack.push(final_type)
         else:
-            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            print('Operator ',operator,' can not operate on ' , l_operand_type , ' and ' , r_operand_type)
             exit()
         pass
 
@@ -1724,7 +1957,6 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#sumsub_op.
     def enterSumsub_op(self, ctx: LuluParser.Sumsub_opContext):
-
         pass
 
     # Exit a parse tree produced by LuluParser#sumsub_op.
@@ -1739,7 +1971,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None :
             self.__typeStack.push(final_type)
         else:
-            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            print('Operator ',operator,' can not operate on ' , l_operand_type , ' and ' , r_operand_type)
             exit()
 
     # Enter a parse tree produced by LuluParser#Unaryop.
@@ -1759,7 +1991,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None:
             self.__typeStack.push(final_type)
         else:
-            print('operator ',operator , ' can not operate ', u_operand)
+            print('Operator ',operator , ' can not operate on ', u_operand)
             exit()
 
 
@@ -1775,9 +2007,6 @@ class LuluListener(ParseTreeListener):
 
     # Enter a parse tree produced by LuluParser#expr_funccall.
     def enterExpr_funccall(self, ctx: LuluParser.Expr_funccallContext):
-
-        #print(ctx.func_call().func_handler().Identifiers().getText())
-        #print(ctx.func_call().func_handler().params().getText())
 
         pass
 
@@ -1801,7 +2030,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None :
             self.__typeStack.push(final_type)
         else:
-            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            print('Operator ',operator," can not operate on types '" , l_operand_type , "' and '" , r_operand_type,"'")
             exit()
         pass
 
@@ -1820,10 +2049,10 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#expr_const_val.
     def exitExpr_const_val(self, ctx: LuluParser.Expr_const_valContext):
+
         const_val_type = Lexer_Dic[ctx.const_val().getChild(0).getSymbol().type]
 
-        ## TODO  String_const has problem
-        if const_val_type == 'Int_const' :
+        if const_val_type in 'Int_const String_const Bool_const ' :
             self.__typeStack.push(const_val_type.split('_')[0])
         else:
             self.__typeStack.push(const_val_type)
@@ -1835,14 +2064,8 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#expr_array.
     def exitExpr_array(self, ctx: LuluParser.Expr_arrayContext):
-        '''
-        we added this code here to get rid of popping 2 element from typestack
-        when we have case like this
-        int x=[12,....];
-        '''
 
-        # if self.__arrayType != None:
-        #     self.__typeStack.push(self.__arrayType)
+        pass
 
 
     # Enter a parse tree produced by LuluParser#Allocate_func.
@@ -1851,11 +2074,6 @@ class LuluListener(ParseTreeListener):
 
     # Exit a parse tree produced by LuluParser#Allocate_func.
     def exitAllocate_func(self, ctx: LuluParser.Allocate_funcContext):
-
-
-
-
-
         pass
 
     # Enter a parse tree produced by LuluParser#Multiplicative_op.
@@ -1874,7 +2092,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None:
             self.__typeStack.push(final_type)
         else:
-            print('operator ', operator, ' can not operate ', l_operand_type, ' and ', r_operand_type)
+            print('Operator ',operator," can not operate on types '" , l_operand_type , "' and '" , r_operand_type,"'")
             exit()
 
 
@@ -1896,7 +2114,7 @@ class LuluListener(ParseTreeListener):
 
             self.__typeStack.push(final_type)
         else:
-            print('operator ', operator, ' can not operate ', l_operand_type, ' and ', r_operand_type)
+            print('Operator ',operator," can not operate on types '" , l_operand_type , "' and '" , r_operand_type,"'")
 
             exit()
 
@@ -1928,7 +2146,7 @@ class LuluListener(ParseTreeListener):
 
             self.__typeStack.push(final_type)
         else:
-            print('operator ', operator, ' can not operate ', l_operand_type, ' and ', r_operand_type)
+            print('Operator ',operator," can not operate on types '" , l_operand_type , "' and '" , r_operand_type,"'")
 
             exit()
         pass
@@ -1949,7 +2167,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None :
             self.__typeStack.push(final_type)
         else:
-            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            print('Operator ',operator," can not operate on '" , l_operand_type , "' and '" , r_operand_type,"'")
             exit()
         pass
 
@@ -1969,7 +2187,7 @@ class LuluListener(ParseTreeListener):
         if final_type != None :
             self.__typeStack.push(final_type)
         else:
-            print('operator ',operator,' can not operate ' , l_operand_type , ' and ' , r_operand_type)
+            print('Operator ',operator," can not operate on types '" , l_operand_type , "' and '" , r_operand_type,"'")
             exit()
         pass
 
@@ -2000,7 +2218,7 @@ class LuluListener(ParseTreeListener):
                     '''
                     array_ele_value = (ctx.expr(number_of_array_element - i - 1).getText())
                     # TODO output result
-                    print("type " + array_ele_value + " does not match ", self.__arrayType)
+                    print("Type of '" + array_ele_value + "' does not match '", self.__arrayType + "'")
                     exit()
             self.__typeStack.push(self.__arrayType)
 
